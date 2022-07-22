@@ -1,0 +1,20 @@
+{
+  "icon": "",
+  "name": "{%appName%}",
+  "title": "应用名称",
+  "summary": "应用简介",
+  "description": "应用详情",
+  "version": "v1.0.0",
+  "category": [],
+  "licence": "",
+  "author": "",
+  "documentation": {
+    "guide": "使用者手册",
+    "developer": "开发者手册"
+  },
+  "dependencies": ["其他应用依赖"],
+  "startcms": {
+    "version": "1.0.0"
+  },
+  "menu": []
+}
