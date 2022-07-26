@@ -50,17 +50,17 @@ class AuthService extends Service
             $temp['status']    = $auth['status'] ?? 1;
             $temp['params']    = $auth['params'] ?? '';
             $temp['node']      = $item['node'];
-            $temp['is_super']  = $item['issuper'];
-            $temp['is_admin']  = $item['isadmin'];
-            $temp['is_auth']   = $item['isauth'];
-            $temp['is_open']   = $item['isopen'];
-            $temp['is_menu']   = isset($auth['is_menu']) ? $auth['is_menu'] : $item['ismenu'];
+            $temp['is_super']  = $auth['is_super'] ?? $item['issuper'];
+            $temp['is_admin']  = $auth['is_admin'] ?? $item['isadmin'];
+            $temp['is_open']   = $auth['is_open'] ?? $item['isopen'];
+            $temp['is_auth']   = $auth['is_auth'] ?? (boolean)$auth;
+            $temp['is_menu']   = $auth['is_menu'] ?? $item['ismenu'];
             $temp['parent']    = $auth['parent'] ?? $item['parent'];
-            $temp['path']      = '/' . str_replace('_', '/', $item['node']);
-            $temp['view']      = isset($auth['view']) ? $auth['view'] : ($item['isview'] ? str_replace('_', '/', $item['node']) : '');
+            $temp['path']      = $auth['path'] ?? '/' . str_replace('_', '/', $item['node']);
+            $temp['view']      = $auth['view'] ?? ($item['isview'] ? '/'.str_replace('_', '/', $item['node']) : '');
             $temp['redirect']  = $auth['redirect'] ?? '';
             $temp['hidden']    = 0;
-            $temp['no_cache']  = 0;
+            $temp['cache']     = 1;
             $authNode[$item['node']] = $temp;
         }
 
@@ -97,7 +97,6 @@ class AuthService extends Service
         }
         // 保存权限
         $tree = DataExtend::arr2tree($authNode, 'node', 'parent', 'children');
-        dd($tree);
         $auths = $this->saveBuilding($tree, 0);
         return $auths;
     }

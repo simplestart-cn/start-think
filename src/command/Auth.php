@@ -45,7 +45,7 @@ class Auth extends Command
         if (!empty($app)) {
             $output->writeln("start building {$app}...");
             $res = $service->building($app);
-            $output->writeln("{$app} complete.");
+            $output->writeln("{$app} complete!");
         } else {
             $apps    = AppService::getApps();
             if(empty($apps)){
@@ -55,9 +55,9 @@ class Auth extends Command
             $output->writeln("start building...");
             foreach ($apps as $name) {
                 $res = $service->building($name);
-                $output->writeln("{$name} complete.");
+                $output->writeln("{$name} complete!");
             }
-            $output->writeln("all complete !");
+            $output->writeln("all complete!");
         }
     }
 
