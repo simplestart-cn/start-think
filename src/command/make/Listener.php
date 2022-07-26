@@ -8,25 +8,24 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+namespace start\command\make;
 
-namespace start\command\build;
+use start\command\Make;
 
-use start\command\Build;
-
-class Middleware extends Build
+class Listener extends Make
 {
-    protected $type = "Middleware";
+    protected $type = "Listener";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:middleware')
-            ->setDescription('Create a new middleware class');
+        $this->setName('make:listener')
+            ->setDescription('Create a new listener class');
     }
 
     protected function getStub(): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'middleware.stub';
+        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'listener.stub';
     }
     
 }

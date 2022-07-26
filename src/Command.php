@@ -40,7 +40,7 @@ class Command extends ThinkCommand
      */
     public function version()
     {
-        return $this->app->config->get('app.StartThink', '1.0.0');
+        return $this->app->config->get('app.version', '1.0.0');
     }
 
     /**

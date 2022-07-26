@@ -10,14 +10,14 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
-namespace start\command\build;
+namespace start\command\make;
 
-use start\command\Build;
+use start\command\Make;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Option;
 
-class App extends Build
+class App extends Make
 {
     
     /**
@@ -39,10 +39,10 @@ class App extends Build
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:app')
+        $this->setName('make:app')
             ->addOption('apidoc', null, Option::VALUE_NONE, 'Generate apidoc config.')
             ->addOption('common', null, Option::VALUE_NONE, 'Generate common class.')
-            ->setDescription('Build App Dirs');
+            ->setDescription('Create a new app dirs');
     }
 
     protected function execute(Input $input, Output $output)

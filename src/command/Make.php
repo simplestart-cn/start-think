@@ -16,7 +16,7 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 
-abstract class Build extends Command
+abstract class Make extends Command
 {
     
     protected $type = '';

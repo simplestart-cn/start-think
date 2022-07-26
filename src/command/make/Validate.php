@@ -9,38 +9,26 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-namespace start\command\build;
+namespace start\command\make;
 
-use start\command\Build;
-use think\console\input\Option;
+use start\command\Make;
 
-class Controller extends Build
+class Validate extends Make
 {
-
-    protected $type = "Controller";
+    protected $type = "Validate";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:controller')
-            ->addOption('apidoc', null, Option::VALUE_NONE, 'Generate an api controller class.')
-            ->addOption('plain', null, Option::VALUE_NONE, 'Generate an empty controller class.')
-            ->setDescription('Create a new resource controller class');
+        $this->setName('make:validate')
+            ->setDescription('Create a validate class');
     }
 
     protected function getStub(): string
     {
         $stubPath = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR;
 
-        if ($this->input->getOption('apidoc')) {
-            return $stubPath . 'controller.apidoc.stub';
-        }
-
-        if ($this->input->getOption('plain')) {
-            return $stubPath . 'controller.plain.stub';
-        }
-
-        return $stubPath . 'controller.stub';
+        return $stubPath . 'validate.stub';
     }
-    
+
 }

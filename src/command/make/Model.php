@@ -9,18 +9,18 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-namespace start\command\build;
+namespace start\command\make;
 
-use start\command\Build;
+use start\command\Make;
 
-class Model extends Build
+class Model extends Make
 {
     protected $type = "Model";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:model')
+        $this->setName('make:model')
             ->setDescription('Create a new model class');
     }
 

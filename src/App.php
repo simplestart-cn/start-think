@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 // +----------------------------------------------------------------------
 // | Simplestart Think
 // +----------------------------------------------------------------------
@@ -79,7 +80,7 @@ class App
      */
     protected function getRoutePath($appName = ''): string
     {
-        if($appName === 'core'){
+        if ($appName === 'core') {
             return $this->app->getRootPath() . 'core' . DIRECTORY_SEPARATOR . 'route' . DIRECTORY_SEPARATOR;
         }
         return $this->app->getAppPath() . 'route' . DIRECTORY_SEPARATOR;
@@ -145,9 +146,9 @@ class App
                 } else {
 
                     $appName = $name ?: $defaultApp;
-                    if($appName === 'core'){
+                    if ($appName === 'core') {
                         $appPath = $this->path ?: $this->app->getRootPath() . $appName . DIRECTORY_SEPARATOR;
-                    }else{
+                    } else {
                         $appPath = $this->path ?: $this->app->getBasePath() . $appName . DIRECTORY_SEPARATOR;
                     }
 
@@ -197,17 +198,17 @@ class App
     {
         $this->appName = $appName;
         $this->app->http->name($appName);
-        if($appName === 'core'){
+        if ($appName === 'core') {
             $appPath = $this->path ?: $this->app->getRootPath() . $appName . DIRECTORY_SEPARATOR;
-        }else{
+        } else {
             $appPath = $this->path ?: $this->app->getBasePath() . $appName . DIRECTORY_SEPARATOR;
         }
-        
+
         $this->app->setAppPath($appPath);
         // 设置应用命名空间
-        if($appName === 'core'){
+        if ($appName === 'core') {
             $this->app->setNamespace('core');
-        }else{
+        } else {
             $this->app->setNamespace($this->app->config->get('app.app_namespace') ?: 'app\\' . $appName);
         }
         if (is_dir($appPath)) {
@@ -228,7 +229,7 @@ class App
         $rootPath = $this->app->getRootPath();
         $basePath = $this->app->getBasePath();
         // 加载核心
-        if($appName !== 'core'){
+        if ($appName !== 'core') {
             if (is_file($rootPath . 'core' . DIRECTORY_SEPARATOR . 'common.php')) {
                 include_once $rootPath . 'core' . DIRECTORY_SEPARATOR  . 'common.php';
             }
@@ -251,16 +252,22 @@ class App
 
         // 加载应用事件
         $apps = $this->app->cache->get('apps', []);
-        if(empty($apps)){
+        if (empty($apps)) {
             $apps = AppService::getApps();
             $this->app->cache->set('apps', $apps);
         }
         if (is_file($rootPath . 'core' . DIRECTORY_SEPARATOR . 'event.php')) {
             $this->loadEvent(include $rootPath . 'core' . DIRECTORY_SEPARATOR  . 'event.php');
+        }else{
+            $this->autoLoadEvent('core', $rootPath);
         }
         foreach ($apps as $_app) {
             if (is_file($basePath . $_app . DIRECTORY_SEPARATOR . 'event.php')) {
+                // 手动注册事件
                 $this->loadEvent(include $basePath . $_app . DIRECTORY_SEPARATOR . 'event.php');
+            } else {
+                // 自动注册事件
+                $this->autoLoadEvent($_app, $rootPath);
             }
         }
 
@@ -274,7 +281,7 @@ class App
     }
 
     /**
-     * 注册应用事件
+     * 主动注册应用事件
      * @access protected
      * @param array $event 事件数据
      * @return void
@@ -294,4 +301,49 @@ class App
         }
     }
 
+    /**
+     * 自动注册应用事件
+     * @param string $appName
+     * @param string $rootPath
+     * @return void
+     */
+    public function autoLoadEvent(string $appName, string $rootPath)
+    {
+        $event = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'event' . DIRECTORY_SEPARATOR;
+        $listener = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'listener' . DIRECTORY_SEPARATOR;
+        $subscribe = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'subscribe' . DIRECTORY_SEPARATOR;
+        if (is_dir($event)) {
+            // 事件绑定
+            $event = array_reduce(glob("{$event}*.php"), function ($result, $item) use ($rootPath) {
+                $eventName = basename($item, '.php');
+                return array_merge($result, [
+                    $eventName => str_replace('.php', '', str_replace('/', '\\', str_replace($rootPath, '', $item)))
+                ]);
+            }, []);
+            if (!empty($event)) {
+                $this->app->event->bind($event);
+            }
+        }
+        if (is_dir($listener)) {
+            // 事件监听
+            $listener = array_reduce(glob("{$listener}*.php"), function ($result, $item) use ($rootPath) {
+                $eventName = basename($item, '.php');
+                return array_merge($result, [
+                    $eventName => [str_replace('.php', '', str_replace('/', '\\', str_replace($rootPath, '', $item)))]
+                ]);
+            }, []);
+            if (!empty($listener)) {
+                $this->app->event->listenEvents($listener);
+            }
+        }
+        if (is_dir($subscribe)) {
+            // 事件订阅
+            $subscribe = array_map(function ($item) use ($rootPath) {
+                return str_replace('.php', '', str_replace('/', '\\', str_replace($rootPath, '', $item)));
+            }, glob("{$subscribe}*.php"));
+            if (!empty($subscribe)) {
+                $this->app->event->subscribe($subscribe);
+            }
+        }
+    }
 }

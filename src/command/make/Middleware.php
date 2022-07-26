@@ -8,24 +8,25 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-namespace start\command\build;
 
-use start\command\Build;
+namespace start\command\make;
 
-class Subscribe extends Build
+use start\command\Make;
+
+class Middleware extends Make
 {
-    protected $type = "Subscribe";
+    protected $type = "Middleware";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:subscribe')
-            ->setDescription('Create a new subscribe class');
+        $this->setName('make:middleware')
+            ->setDescription('Create a new middleware class');
     }
 
     protected function getStub(): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'subscribe.stub';
+        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'middleware.stub';
     }
-
+    
 }

@@ -28,7 +28,7 @@ class Auth extends Command
 {
     public function configure()
     {
-        $this->setName('start:auth');
+        $this->setName('auth');
         $this->addArgument('app', Argument::OPTIONAL, 'App name');
         $this->setDescription('Building app auth.');
     }

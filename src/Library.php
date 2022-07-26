@@ -39,18 +39,25 @@ class Library extends Service
         $this->app->event->listen('HttpRun', function () {
             $this->app->middleware->add(App::class);
         });
-                // 注册系统任务指令
+        
+        // 注册系统任务指令
         $this->commands([
+            'start\command\Run',
             'start\command\Auth',
             'start\command\Clear',
             'start\command\Install',
             'start\command\Version',
             'start\command\Database',
-            'start\command\build\App',
-            'start\command\build\Cms',
-            'start\command\build\Model',
-            'start\command\build\Service',
-            'start\command\build\Controller'
+            'start\command\make\App',
+            'start\command\make\Cms',
+            'start\command\make\Event',
+            'start\command\make\Listener',
+            'start\command\make\Subscribe',
+            'start\command\make\Model',
+            'start\command\make\Service',
+            'start\command\make\Validate',
+            'start\command\make\Controller',
+            'start\command\make\Middleware',
         ]);
 
         // 绑定插件路由

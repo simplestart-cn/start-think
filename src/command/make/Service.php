@@ -8,24 +8,30 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-namespace start\command\build;
 
-use start\command\Build;
+namespace start\command\make;
 
-class Listener extends Build
+use start\command\Make;
+
+class Service extends Make
 {
-    protected $type = "Listener";
+    protected $type = "Service";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:listener')
-            ->setDescription('Create a new listener class');
+        $this->setName('make:service')
+            ->setDescription('Create a new Service class');
     }
 
     protected function getStub(): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'listener.stub';
+        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'service.stub';
     }
-    
+
+    protected function getClassPath(string $namespace, string $classname): string
+    {
+        return str_replace('.php', 'Service.php', parent::getClassPath($namespace, $classname));
+    }
+
 }

@@ -10,14 +10,14 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
-namespace start\command\build;
+namespace start\command\make;
 
-use start\command\Build;
+use start\command\Make;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Option;
 
-class Cms extends Build
+class Cms extends Make
 {
     
     /**
@@ -39,10 +39,10 @@ class Cms extends Build
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:cms')
+        $this->setName('make:cms')
             ->addOption('apidoc', null, Option::VALUE_NONE, 'Generate with apidoc config.')
             ->addOption('plain', null, Option::VALUE_NONE, 'Generate an empty controller class.')
-            ->setDescription('Build Controller-Model-Service');
+            ->setDescription('Create a new Controller-Model-Service');
     }
 
     protected function execute(Input $input, Output $output)

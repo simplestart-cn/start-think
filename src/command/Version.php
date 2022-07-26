@@ -25,8 +25,8 @@ class Version extends Command
 {
     protected function configure()
     {
-        $this->setName('start:version');
-        $this->setDescription("Library and ThinkPHP Version for StartCloud");
+        $this->setName('version');
+        $this->setDescription("StartThink and ThinkPHP Version for StartCloud");
     }
 
     /**
@@ -35,7 +35,7 @@ class Version extends Command
      */
     protected function execute(Input $input, Output $output)
     {
-        $output->writeln('start-library ' . $this->version());
+        $output->writeln('start-cms ' . $this->version());
         $output->writeln('think-php ' . $this->app->version());
     }
 }

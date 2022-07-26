@@ -26,7 +26,7 @@ class Database extends Command
 {
     public function configure()
     {
-        $this->setName('start:database');
+        $this->setName('database');
         $this->addArgument('action', Argument::OPTIONAL, 'repair|optimize', 'optimize');
         $this->setDescription('Database Optimize and Repair for ThinkStart');
     }

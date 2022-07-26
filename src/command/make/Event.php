@@ -8,30 +8,24 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+namespace start\command\make;
 
-namespace start\command\build;
+use start\command\Make;
 
-use start\command\Build;
-
-class Service extends Build
+class Event extends Make
 {
-    protected $type = "Service";
+    protected $type = "Event";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:service')
-            ->setDescription('Create a new Service class');
+        $this->setName('make:event')
+            ->setDescription('Create a new event class');
     }
 
     protected function getStub(): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'service.stub';
-    }
-
-    protected function getClassPath(string $namespace, string $classname): string
-    {
-        return str_replace('.php', 'Service.php', parent::getClassPath($namespace, $classname));
+        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'event.stub';
     }
 
 }

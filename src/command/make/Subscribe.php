@@ -8,24 +8,24 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-namespace start\command\build;
+namespace start\command\make;
 
-use start\command\Build;
+use start\command\Make;
 
-class Event extends Build
+class Subscribe extends Make
 {
-    protected $type = "Event";
+    protected $type = "Subscribe";
 
     protected function configure()
     {
         parent::configure();
-        $this->setName('build:event')
-            ->setDescription('Create a new event class');
+        $this->setName('make:subscribe')
+            ->setDescription('Create a new subscribe class');
     }
 
     protected function getStub(): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'event.stub';
+        return __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'subscribe.stub';
     }
 
 }
