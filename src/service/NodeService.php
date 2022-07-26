@@ -251,12 +251,12 @@ class NodeService extends Service
             'isview'  => intval(preg_match('/@view\s*/i', $text)),   // 渲染视图模板
             'isopen'  => intval(preg_match('/@open\s*/i', $text)),   // 是否开放菜单
         ];
-        // 匹配设置的menu值
-        if($method['ismenu']){
-            preg_match('/@menu\s\[(.*?)\]\s/i', $text, $menu);
-            if(count($menu) > 1){
-                $menu = '{'.str_replace('=>',':',str_replace("'", '"', preg_replace("/\s/i", '', $menu[1]))).'}';
-                $method['ismenu'] = json_decode($menu, true);
+        // 匹配设置的auth值
+        if($method['isauth']){
+            preg_match('/@auth\s\{(.*?)\}\s/i', $text, $auth);
+            if(count($auth) > 1){
+                $auth = '{'.str_replace("'", '"', preg_replace("/\s/i", '', $auth[1])).'}';
+                $method['isauth'] = json_decode($auth, true) ?? 1;
             }
         }
         // 匹配设置的view值
@@ -264,10 +264,10 @@ class NodeService extends Service
             preg_match('/@view\s(.*?)\s/i', $text, $view);
             if(count($view) > 1){
                 if(!empty($view[1])){
-                    if(is_array($method['ismenu'])){
-                        $method['ismenu']['view'] = $view[1];
+                    if(is_array($method['isauth'])){
+                        $method['isauth']['view'] = $view[1];
                     }else{
-                        $method['ismenu'] = ['is_menu' => $method['ismenu'], 'view' => $view[1]];
+                        $method['isauth'] = ['is_menu' => $method['ismenu'], 'view' => $view[1]];
                     }
                 }
             }

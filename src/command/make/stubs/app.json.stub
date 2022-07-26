@@ -12,9 +12,9 @@
     "guide": "使用者手册",
     "developer": "开发者手册"
   },
-  "dependencies": ["其他应用依赖"],
+  "dependencies": [],
   "startcms": {
-    "version": "1.0.0"
+    "min-version": "v1.0.0"
   },
-  "menu": []
+  "auth": []
 }
