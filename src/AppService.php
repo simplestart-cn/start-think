@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------
 // | Simplestart Think
 // +----------------------------------------------------------------------
-// | 版权所有: http://www.simplestart.cn copyright 2020
+// | 版权所有: https://www.simplestart.cn copyright 2020
 // +----------------------------------------------------------------------
 // | 开源协议: https://www.apache.org/licenses/LICENSE-2.0.txt
 // +----------------------------------------------------------------------
@@ -60,7 +60,7 @@ class AppService extends Service
     protected function initialize()
     {
         // 框架版本
-        $this->version = $this->app->config->get('app.start_cloud');
+        $this->version = $this->app->config->get('app.version');
         if (empty($this->version)) {
             $this->version = 'last';
         }

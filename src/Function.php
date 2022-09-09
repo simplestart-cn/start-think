@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------
 // | Simplestart Think
 // +----------------------------------------------------------------------
-// | 版权所有: http://www.simplestart.cn copyright 2020
+// | 版权所有: https://www.simplestart.cn copyright 2020
 // +----------------------------------------------------------------------
 // | 开源协议: https://www.apache.org/licenses/LICENSE-2.0.txt
 // +----------------------------------------------------------------------
@@ -11,13 +11,11 @@
 // +----------------------------------------------------------------------
 
 use think\exception\HttpResponseException;
-use start\Storage;
 use start\extend\HttpExtend;
 use start\extend\CodeExtend;
 use start\extend\DataExtend;
 use start\service\TokenService;
 use start\service\RuntimeService;
-use think\facade\Config;
 
 if (!function_exists('debug')) {
     /**
@@ -228,20 +226,6 @@ if (!function_exists('debase64url')) {
     function debase64url(string $string)
     {
         return base64_decode(str_pad(strtr($string, '-_', '+/'), strlen($string) % 4, '=', STR_PAD_RIGHT));
-    }
-}
-if (!function_exists('down_file')) {
-    /**
-     * 下载远程文件到本地
-     * @param string $source 远程文件地址
-     * @param boolean $force 是否强制重新下载
-     * @param integer $expire 强制本地存储时间
-     * @return string
-     */
-    function down_file($source, $force = false, $expire = 0)
-    {
-        $result = Storage::down($source, $force, $expire);
-        return $result['url'] ?? $source;
     }
 }
 if (!function_exists('encode')) {

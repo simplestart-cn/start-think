@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------
 // | Simplestart Think
 // +----------------------------------------------------------------------
-// | 版权所有: http://www.simplestart.cn copyright 2020
+// | 版权所有: https://www.simplestart.cn copyright 2020
 // +----------------------------------------------------------------------
 // | 开源协议: https://www.apache.org/licenses/LICENSE-2.0.txt
 // +----------------------------------------------------------------------
@@ -51,7 +51,7 @@ class Command extends ThinkCommand
     public function startThink($args = '')
     {
         $root = $this->app->getRootPath();
-        return trim("php {$root}think {$args}");
+        return trim("php {$root}start {$args}");
     }
 
     

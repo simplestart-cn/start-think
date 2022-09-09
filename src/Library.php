@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------
 // | Simplestart Think
 // +----------------------------------------------------------------------
-// | 版权所有: http://www.simplestart.cn copyright 2020
+// | 版权所有: https://www.simplestart.cn copyright 2020
 // +----------------------------------------------------------------------
 // | 开源协议: https://www.apache.org/licenses/LICENSE-2.0.txt
 // +----------------------------------------------------------------------
@@ -13,12 +13,9 @@
 namespace start;
 
 
-use think\Request;
 use think\Service;
-use think\facade\Config;
 use think\middleware\SessionInit;
 use start\service\RuntimeService;
-use function Composer\Autoload\includeFile;
 
 /**
  * 模块注册服务
