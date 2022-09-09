@@ -8,51 +8,41 @@
 // +----------------------------------------------------------------------
 // | Author: Slince <taosikai@yeah.net>
 // +----------------------------------------------------------------------
-declare (strict_types = 1);
+declare(strict_types=1);
 
 namespace start\command;
 
 use start\Command;
 use think\console\Input;
-use think\console\input\Option;
 use think\console\Output;
+use think\console\input\Option;
+use think\console\input\Argument;
 
 class Run extends Command
 {
     public function configure()
     {
         $this->setName('run')
-            ->addOption(
-                'host',
-                'H',
-                Option::VALUE_OPTIONAL,
-                'The host to server the application on',
-                '0.0.0.0'
-            )
-            ->addOption(
-                'port',
-                'p',
-                Option::VALUE_OPTIONAL,
-                'The port to server the application on',
-                8000
-            )
-            ->addOption(
-                'root',
-                'r',
-                Option::VALUE_OPTIONAL,
-                'The document root of the application',
-                ''
-            )
-            ->setDescription('PHP Built-in Server for ThinkPHP');
+            ->addOption('root', 'r', Option::VALUE_OPTIONAL, 'The document root of the application', '')
+            ->addArgument('host', Argument::OPTIONAL, 'Default host: 0.0.0.0:80')
+            ->setDescription('PHP Built-in Server for StartCMS');
     }
 
     public function execute(Input $input, Output $output)
     {
-        $host = $input->getOption('host');
-        $port = $input->getOption('port');
+        $port = 80;
         $root = $input->getOption('root');
+        $host = $input->getArgument('host');
+
         if (empty($root)) {
             $root = $this->app->getRootPath();
+        }
+        if (empty($host)) {
+            $host = '0.0.0.0';
+        } elseif (stripos($host, ':') !== false) {
+            $host = explode(':', $host);
+            $port = array_pop($host);
+            $host = array_pop($host);
         }
 
         $command = sprintf(
@@ -63,10 +53,9 @@ class Run extends Command
             escapeshellarg($root . DIRECTORY_SEPARATOR . 'router.php')
         );
 
-        $output->writeln(sprintf('ThinkPHP Development server is started On <http://%s:%s/>', $host, $port));
+        $output->writeln(sprintf('Server is started On <http://%s:%s/>', $host, $port));
         $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
         $output->writeln(sprintf('Document root is: %s', $root));
         passthru($command);
     }
-
 }
