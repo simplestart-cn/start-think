@@ -67,7 +67,7 @@ class AppService extends Service
         // 应用市场
         $this->uri = "https://appstore.simplestart.cn";
         // 应用目录
-        $this->path = strtr($this->app->getRootPath(), '\\', '/');
+        $this->path = strtr(root_path(), '\\', '/');
         return $this;
     }
 
@@ -175,7 +175,7 @@ class AppService extends Service
     public static function install($name)
     {
         $app = self::getPackInfo($name);
-        $path = self::instance()->app->getBasePath() . $name;
+        $path = base_path() . $name;
         foreach ($app as $key => $value) {
             if (stripos($key, '-') !== false) {
                 $app[str_replace('-', '_', $key)] = $value;
@@ -235,7 +235,7 @@ class AppService extends Service
     public static function uninstall($name)
     {
         $app = self::getPackInfo($name);
-        $path = self::instance()->app->getBasePath() . $name;
+        $path = base_path() . $name;
 
         $model = self::getInfo(['name' => $name]);
         if (!$model) {
@@ -286,7 +286,7 @@ class AppService extends Service
         // 删除权限菜单
         AuthService::model()->where(['app' => $name])->delete();
         // 删除应用目录
-        $path = self::instance()->app->getBasePath() . $name . DIRECTORY_SEPARATOR;
+        $path = base_path() . $name . DIRECTORY_SEPARATOR;
         return self::_removeFolder($path);
     }
 
@@ -376,9 +376,9 @@ class AppService extends Service
     public static function getPackInfo($name)
     {
         if($name === 'core'){
-            $path         = self::instance()->app->getRootPath() . $name . DIRECTORY_SEPARATOR . 'app.json';
+            $path         = root_path() . $name . DIRECTORY_SEPARATOR . 'app.json';
         }else{
-            $path         = self::instance()->app->getBasePath() . $name . DIRECTORY_SEPARATOR . 'app.json';
+            $path         = base_path() . $name . DIRECTORY_SEPARATOR . 'app.json';
         }
         if(!is_file($path)){
             return false;
@@ -394,7 +394,7 @@ class AppService extends Service
      */
     public static function getApps()
     {
-        $path = self::instance()->app->getBasePath();
+        $path = base_path();
         $apps = [];
         foreach (glob("{$path}*") as $item) {
             if (is_dir($item)) {
@@ -431,7 +431,7 @@ class AppService extends Service
     private static function getDownloaded()
     {
         $apps     = [];
-        $basePath = self::instance()->app->getBasePath();
+        $basePath = base_path();
         foreach (self::_scanApps($basePath) as $file) {
             if (preg_match("|(\w+)/app.json$|i", $file, $matches)) {
                 list($path, $name) = $matches;

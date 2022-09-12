@@ -81,7 +81,7 @@ class App extends Model
 	 * 设置框架
 	 * @param [type] $value [description]
 	 */
-	public function setStartAdminAttr($value)
+	public function setStartCmsAttr($value)
 	{
 		return json_encode($value);
 	}
@@ -91,7 +91,7 @@ class App extends Model
 	 * @param  [type] $value [description]
 	 * @return [type]        [description]
 	 */
-	public function getStartAdminAttr($value)
+	public function getStartCmsAttr($value)
 	{
 		return json_decode($value);
 	}
