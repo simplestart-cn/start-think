@@ -456,7 +456,7 @@ class AppService extends Service
     {
         $data = [];
         foreach (glob("{$path}*") as $item) {
-            if (is_dir($item)) {
+            if (is_dir($item) && stripos($item, 'node_modules') === false ) {
                 $data = array_merge($data, self::_scanApps("{$item}/"));
             } elseif (is_file($item) && pathinfo($item, PATHINFO_EXTENSION) === $ext) {
                 $data[] = strtr($item, '\\', '/');
