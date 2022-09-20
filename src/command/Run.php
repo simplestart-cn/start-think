@@ -24,13 +24,13 @@ class Run extends Command
     {
         $this->setName('run')
             ->addOption('root', 'r', Option::VALUE_OPTIONAL, 'The document root of the application', '')
-            ->addArgument('host', Argument::OPTIONAL, 'Default host: 0.0.0.0:80')
+            ->addArgument('host', Argument::OPTIONAL, 'Default host: 0.0.0.0:8080')
             ->setDescription('PHP Built-in Server for StartCMS');
     }
 
     public function execute(Input $input, Output $output)
     {
-        $port = 80;
+        $port = 8080;
         $root = $input->getOption('root');
         $host = $input->getArgument('host');
 
