@@ -164,7 +164,7 @@ if (!function_exists('throw_error')) {
      * @param  string  $data 异常数据
      * @param  integer $code 异常编码
      */
-    function throw_error($msg, $data = '{-null-}', $code = 0)
+    function throw_error($msg, $data = '{-null-}', $code = 1)
     {
         if ($data === '{-null-}') $data = new \stdClass();
         throw new HttpResponseException(json([

@@ -86,7 +86,7 @@ abstract class Controller extends \stdClass
      * @param mixed $data 返回数据
      * @param integer $code 返回代码
      */
-    public function error($msg, $data = '{-null-}', $code = 0)
+    public function error($msg, $data = '{-null-}', $code = 1)
     {
         if ($data === '{-null-}') $data = new \stdClass();
         throw new HttpResponseException(json([
@@ -100,7 +100,7 @@ abstract class Controller extends \stdClass
      * @param mixed $data 返回数据
      * @param integer $code 返回代码
      */
-    public function success($msg, $data = '{-null-}', $code = 1)
+    public function success($msg, $data = '{-null-}', $code = 0)
     {
 
         if ($this->csrf_state) {

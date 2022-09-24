@@ -35,7 +35,7 @@
 // 成功状态
 /**
  * @apiDefine CommonSuccess
- * @apiSuccess {number} code=1         状态码
+ * @apiSuccess {number} code=0         状态码
  * @apiSuccess {Object} data={}        数据信息
  * @apiSuccess {string} msg="success"  状态消息
  */
@@ -43,7 +43,7 @@
 // 失败状态
 /**
  * @apiDefine CommonError
- * @apiError {number} code=0         状态码
+ * @apiError {number} code=1         状态码
  * @apiError {string} msg="error"    状态消息
  */
 
