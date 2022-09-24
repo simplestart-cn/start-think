@@ -59,8 +59,8 @@ class AuthService extends Service
             $temp['path']      = $auth['path'] ?? '/' . str_replace('_', '/', $item['node']);
             $temp['view']      = $auth['view'] ?? ($item['isview'] ? '/'.str_replace('_', '/', $item['node']) : '');
             $temp['redirect']  = $auth['redirect'] ?? '';
-            $temp['hidden']    = 0;
-            $temp['cache']     = 1;
+            $temp['hidden']    = $auth['hidden'] ?? 0;
+            $temp['cache']     = $auth['cache'] ?? 1;
             $authNode[$item['node']] = $temp;
         }
 
