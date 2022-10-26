@@ -1,6 +1,7 @@
 {
   "icon": "",
   "name": "{%appName%}",
+  "entry": "{$appName}/index",
   "title": "应用名称",
   "summary": "应用简介",
   "description": "应用详情",
@@ -16,5 +17,6 @@
   "startcms": {
     "min-version": "v1.0.0"
   },
-  "auth": []
+  "auth": [],
+  "config": []
 }
