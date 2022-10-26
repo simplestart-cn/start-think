@@ -42,6 +42,7 @@ class Library extends Service
             'start\command\Run',
             'start\command\Auth',
             'start\command\Clear',
+            'start\command\Apidoc',
             'start\command\Install',
             'start\command\Version',
             'start\command\Database',

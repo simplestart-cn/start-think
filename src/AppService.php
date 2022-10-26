@@ -11,6 +11,9 @@
 // +----------------------------------------------------------------------
 
 namespace start;
+
+use PhpZip\ZipFile;
+use PhpZip\Exception\ZipException;
 use start\extend\HttpExtend;
 use start\service\AuthService;
 use start\service\ConfigService;
@@ -59,15 +62,16 @@ class AppService extends Service
      */
     protected function initialize()
     {
+        // 服务地址
+        $this->url = $this->app->config->get('cms.api');
         // 框架版本
-        $this->version = $this->app->config->get('app.version');
+        $this->version = $this->app->config->get('cms.version');
         if (empty($this->version)) {
             $this->version = 'last';
         }
-        // 应用市场
-        $this->uri = "https://appstore.simplestart.cn";
-        // 应用目录
+        // 框架目录
         $this->path = strtr(root_path(), '\\', '/');
+        
         return $this;
     }
 
@@ -83,8 +87,8 @@ class AppService extends Service
         $installed  = self::getInstalled();
         $downloaded = self::getDownloaded();
         foreach ($downloaded as $name => $app) {
-            if(!isset($app['version'])){
-                throw_error('app.json error: '.$app['name']);
+            if (!isset($app['version'])) {
+                throw_error('app.json error: ' . $app['name']);
             }
             if (isset($installed[$name])) {
                 $last              = $installed[$name];
@@ -124,7 +128,7 @@ class AppService extends Service
     {
         $model = self::getInfo(['name' => $input['name']]);
         if (!$model) {
-            throw_error(lang('app_does_not_exist'));
+            throw_error(lang('app_not_installed'));
         }
         return $model->save($input);
     }
@@ -145,10 +149,10 @@ class AppService extends Service
                 $where['app']       = $conf['app'];
                 $where['field']     = $conf['field'];
                 $model = ConfigService::getInfo($where);
-                if($model && $model->id){
+                if ($model && $model->id) {
                     unset($conf['value']);
                     $model->save($conf);
-                }else{
+                } else {
                     ConfigService::create($conf);
                 }
             }
@@ -162,9 +166,44 @@ class AppService extends Service
      * @param  [type] $app [description]
      * @return [type]      [description]
      */
-    public static function download($name)
+    public static function download($name, $version)
     {
+        $service = self::instance();
+        $tempDir = self::getBackupDir();
+        $tmpFile = $tempDir . $name . ".zip";
+        try {
+            $api = $service->url . '/appstore/download';
+            $params = [
+                'app' => $name,
+                'app_version' => $version,
+                'cms_version' => $service->version,
+            ];
+            $options = [
+                'timeout'         => 30,
+                'connect_timeout' => 30,
+                'verify'          => false,
+                'http_errors'     => false,
+                'headers'         => [
+                    'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                    'Referer'          => dirname(request()->root(true))
+                ]
+            ];
+            $response = HttpExtend::get($api, $params, $options);
+            $response = json_decode($response, true);
+            if($response['code'] !== 0){
+                throw_error($response['msg']);
+            }
+            $content = $response['data'];
+        } catch (\Exception $e) {
+            throw_error($e->getMessage());
+        }
 
+        if ($write = fopen($tmpFile, 'w')) {
+            fwrite($write, $content);
+            fclose($write);
+            return $tmpFile;
+        }
+        throw_error(lang('No permission to write temporary files'));
     }
 
     /**
@@ -189,8 +228,8 @@ class AppService extends Service
         self::startTrans();
         try {
             // 执行安装脚本
-            $installer = $path . DIRECTORY_SEPARATOR . 'installer'.DIRECTORY_SEPARATOR.'install.php';
-            if(file_exists($installer)){
+            $installer = $path . DIRECTORY_SEPARATOR . 'installer' . DIRECTORY_SEPARATOR . 'install.php';
+            if (file_exists($installer)) {
                 require_once $installer;
             }
             // 添加默认配置
@@ -205,7 +244,7 @@ class AppService extends Service
             // 构建权限菜单
             AuthService::instance()->building($app['name']);
             // 添加应用记录
-            if($name != 'core'){
+            if ($name != 'core') {
                 $model->save($app);
             }
             self::startCommit();
@@ -222,9 +261,41 @@ class AppService extends Service
      * @param  [type] $app [description]
      * @return [type]      [description]
      */
-    public static function upgrade($name)
+    public static function upgrade($name, $version)
     {
-
+        $app = self::getInfo(['name' => $name]);
+        $path = base_path() . $name . DIRECTORY_SEPARATOR;
+        if ($app['status']) {
+            throw_error(lang('app_is_runing'));
+        }
+        // 下载应用
+        $tmpFile = self::download($name, $version);
+        // 备份应用
+        self::backup($name);
+        // 删除旧版
+        self::_removeFolder($path);
+        try {
+            // 解压应用文件
+            self::unpack($name);
+            // 执行升级脚本
+            $upgrader = $path . 'installer' . DIRECTORY_SEPARATOR . 'upgrade.php';
+            if (file_exists($upgrader)) {
+                require_once $upgrader;
+            }
+            // 升级配置信息
+            self::updateConfig($name);
+            // 刷新权限菜单
+            AuthService::instance()->building($app['name']);
+            // 更新应用信息
+            $info = self::getPackInfo($name);
+            $app->save($info);
+            return $info;
+        } catch (HttpResponseException $e) {
+            throw_error($e->getMessage());
+        } finally {
+            // 移除临时文件
+            @unlink($tmpFile);
+        }
     }
 
     /**
@@ -245,8 +316,8 @@ class AppService extends Service
         self::startTrans();
         try {
             // 执行卸载脚本
-            $uninstaller = $path . DIRECTORY_SEPARATOR . 'installer'.DIRECTORY_SEPARATOR.'uninstall.php';
-            if(file_exists($uninstaller)){
+            $uninstaller = $path . DIRECTORY_SEPARATOR . 'installer' . DIRECTORY_SEPARATOR . 'uninstall.php';
+            if (file_exists($uninstaller)) {
                 require_once $uninstaller;
             }
             // 删除权限菜单
@@ -283,8 +354,8 @@ class AppService extends Service
         // 删除对应数据表
         // ....
         // ...
-        // 删除权限菜单
-        AuthService::model()->where(['app' => $name])->delete();
+        // 删除应用记录
+        self::model()->where(['name' => $name])->delete();
         // 删除应用目录
         $path = base_path() . $name . DIRECTORY_SEPARATOR;
         return self::_removeFolder($path);
@@ -375,12 +446,12 @@ class AppService extends Service
      */
     public static function getPackInfo($name)
     {
-        if($name === 'core'){
+        if ($name === 'core') {
             $path         = root_path() . $name . DIRECTORY_SEPARATOR . 'app.json';
-        }else{
+        } else {
             $path         = base_path() . $name . DIRECTORY_SEPARATOR . 'app.json';
         }
-        if(!is_file($path)){
+        if (!is_file($path)) {
             return false;
         }
         $info         = json_decode(file_get_contents($path), true);
@@ -411,7 +482,7 @@ class AppService extends Service
      */
     public static function getActive()
     {
-        return self::model()->where('status',1)->column('name');
+        return self::model()->where('status', 1)->column('name');
     }
 
     /**
@@ -444,6 +515,76 @@ class AppService extends Service
         return $apps;
     }
 
+    /**
+     * 获取备份目录
+     * @return string
+     */
+    private static function getBackupDir()
+    {
+        $dir = runtime_path() . 'backup';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        return $dir;
+    }
+
+    /**
+     * 应用备份
+     * @param  string $name
+     * @return boolean
+     */
+    public static function backup($name)
+    {
+        $appPath = base_path() . $name;
+        $backupPath = self::getBackupDir();
+        $file = $backupPath . $name . '-backup-' . date("YmdHis") . '.zip';
+        $zip = new ZipFile();
+        try {
+            $zip->addDirRecursive($appPath)
+                ->saveAsFile($file)
+                ->close();
+        } catch (ZipException $e) {
+            throw_error($e->getMessage());
+        } finally {
+            $zipFile->close();
+        }
+        return true;
+    }
+
+    /**
+     * 解压文件
+     *
+     * @param [type] $name
+     * @return void
+     */
+    private static function unpack($name)
+    {
+        if (!$name) {
+            throw new Exception('Invalid parameters');
+        }
+        $appPath = base_path() . $name;
+        $tempDir = self::getBackupDir();
+        $tempFile = $tempDir . $name . '.zip';
+        if (!is_dir($appPath)) {
+            @mkdir($appPath, 0755);
+        }
+        $zip = new ZipFile();
+        try {
+            $zip->openFile($tempFile);
+        } catch (ZipException $e) {
+            $zip->close();
+            throw_error('Unable to open the zip file');
+        }
+        try {
+            $zip->extractTo($appPath);
+        } catch (ZipException $e) {
+            throw_error('Unable to extract the file');
+        } finally {
+            $zip->close();
+        }
+        return $appPath;
+    }
+
 
 
     /**
@@ -456,7 +597,7 @@ class AppService extends Service
     {
         $data = [];
         foreach (glob("{$path}*") as $item) {
-            if (is_dir($item) && stripos($item, 'node_modules') === false ) {
+            if (is_dir($item) && stripos($item, 'node_modules') === false) {
                 $data = array_merge($data, self::_scanApps("{$item}/"));
             } elseif (is_file($item) && pathinfo($item, PATHINFO_EXTENSION) === $ext) {
                 $data[] = strtr($item, '\\', '/');
@@ -496,7 +637,8 @@ class AppService extends Service
      */
     private function downloadFile($encode)
     {
-        $result = json_decode(HttpExtend::get("{$this->uri}?s=admin/api.update/get&encode={$encode}"), true);
+        $service = self::instance();
+        $result = json_decode(HttpExtend::get("{$service->url}/update/get&encode={$encode}"), true);
         if (empty($result['code'])) {
             return false;
         }
@@ -525,10 +667,12 @@ class AppService extends Service
      */
     public function generateDifference($rules = [], $ignore = [])
     {
+        $service = self::instance();
         list($this->rules, $this->ignore, $data) = [$rules, $ignore, []];
-        $result                                  = json_decode(HttpExtend::post("{$this->uri}?/appstore/upgrade/tree", [
+        $response = HttpExtend::post("{$service->url}?/appstore/upgrade/tree", [
             'rules' => serialize($this->rules), 'ignore' => serialize($this->ignore),
-        ]), true);
+        ]);
+        $result = json_decode($response, true);
         if (!empty($result['code'])) {
             $new = $this->getAppFiles($result['data']['rules'], $result['data']['ignore']);
             foreach ($this->generateDifferenceContrast($result['data']['list'], $new['list']) as $file) {
@@ -537,10 +681,8 @@ class AppService extends Service
                         if (stripos($file['name'], $rule) === 0) {
                             $data[] = $file;
                         }
-
                     }
                 }
-
             }
         }
         return $data;
@@ -606,7 +748,6 @@ class AppService extends Service
                 if (stripos($item['name'], $ingore) === 0) {
                     unset($data[$key]);
                 }
-
             }
         }
 
@@ -631,7 +772,6 @@ class AppService extends Service
                             array_push($data, $this->getFileInfo($temp));
                         }
                     }
-
                 }
             } else {
                 return [$this->getFileInfo($path)];
@@ -653,5 +793,4 @@ class AppService extends Service
             'hash' => md5(preg_replace('/\s+/', '', file_get_contents($filename))),
         ];
     }
-
 }

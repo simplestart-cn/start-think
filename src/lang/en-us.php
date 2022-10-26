@@ -23,6 +23,8 @@ return [
     'csrf_error'     => 'Token validation failed, please refresh and try again later.',
     'method_limit'   => '%s method only.',
     'unknow_config'   => 'Unknow config.',
+    'app_is_runing'  => 'App is Runing.',
+    'app_not_installed' => 'App not installed.',
     'app_already_exist' => 'App already exist.',
     'app_does_not_exist' => 'App does not exist.'
 ];

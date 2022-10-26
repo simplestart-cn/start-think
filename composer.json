@@ -15,7 +15,8 @@
         "ext-curl": "*",
         "ext-json": "*",
         "ext-iconv": "*",
-        "topthink/framework": "^6.0"
+        "nelexa/zip": "^3.3",
+        "symfony/var-exporter": "^4.4.13"
     },
     "replace": {
         "topthink/think-multi-app": "^1.0"

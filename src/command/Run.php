@@ -52,10 +52,10 @@ class Run extends Command
             escapeshellarg($root),
             escapeshellarg($root . DIRECTORY_SEPARATOR . 'router.php')
         );
-
-        $output->writeln(sprintf('Server is started On <http://%s:%s/>', $host, $port));
-        $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
+        $output->writeln(sprintf('Simplestart!'));
+        $output->writeln(sprintf('Server is run on <http://%s:%s/>', $host, $port));
         $output->writeln(sprintf('Document root is: %s', $root));
+        $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
         passthru($command);
     }
 }

@@ -75,11 +75,16 @@ class AuthService extends Service
                 $authNode   = array_merge($authNode, $authExtend);
             }
         }
+        // 无权限节点
+        if(empty($authNode) || (count($authNode) == 1 && !isset($authNode[0]['node']))){
+            return true;
+        }
         // 格式化权限
         $dbNodes   = $this->model->select()->hidden(['create_time','update_time'])->toArray();
         $dbNodes   = array_combine(array_column($dbNodes, 'node'), array_values($dbNodes));
         $dbKeys  = array_combine(array_column($dbNodes, 'id'), array_values($dbNodes));
         foreach ($authNode as &$auth) {
+            if(!isset($auth['node'])) continue;
             if(isset($dbNodes[$auth['node']])){
                 $auth['id'] = $dbNodes[$auth['node']]['id'];
             }

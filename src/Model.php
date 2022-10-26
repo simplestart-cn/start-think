@@ -205,7 +205,7 @@ class Model extends \think\Model
         $with  = is_array($with) ? $with : $this->with;
         $where = is_array($filter) ? array_merge($this->where, $filter) : $filter;
         if (!is_array($filter)) {
-            return $this->with($with)->find($filter);
+            return $this->with($with)->find($where);
         } else {
             return $this->filter($where)->with($with)->find();
         }
@@ -494,34 +494,39 @@ class Model extends \think\Model
         if (!empty($table) && stripos($table, '.') === false) {
             $table .= '.';
         }
-
         foreach ($condition as $key => $value) {
             // 空字段过滤
             if (empty($value) && !is_numeric($value)) {
                 continue;
             }
-            if (is_array($value)) {
-                $opera = 'in';
-                // 兼容<1.0.7版本
-                if (count($value) > 1 && in_array(strtolower($value[0]), $operator)) {
-                    $opera = $value[0];
-                    $value = $value[1];
-                }
-                if ($opera === 'like' || $opera === 'not like') {
-                    $value = stripos($value, '%') === false ? '%' . $value . '%' : $value;
-                }
-                $query = $logic === 'AND' ? $query->where($table . $key, $opera, $value) : $query->whereOr($table . $key, $opera, $value);
-            } else if(stripos($key, '|') !== false){
+            if(stripos($key, '|') !== false){
                 $keys = explode('|', $key);
-                $query = $logic === 'AND' ? $query->where(function($query) use ($table, $keys, $value){
+                $query = $logic === 'AND' ? $query->where(function($query) use ($table, $keys, $value, $operator){
                     foreach ($keys as $k) {
+                        // 兼容<1.0.7版本
+                        if (is_array($value) && count($value) > 1 && in_array(strtolower($value[0]), $operator)) {
+                            $k = $k .'@'. $value[0];
+                            $value = $value[1];
+                        }
                         $query = $this->parseFilterItem($query, $table, $k, $value, "OR");
                     }
-                }) : $query->whereOr(function($query) use ($table, $keys, $value){
+                }) : $query->whereOr(function($query) use ($table, $keys, $value, $operator){
                     foreach ($keys as $k) {
+                        // 兼容<1.0.7版本
+                        if (is_array($value) && count($value) > 1 && in_array(strtolower($value[0]), $operator)) {
+                            $k = $k .'@'. $value[0];
+                            $value = $value[1];
+                        }
                         $query = $this->parseFilterItem($query, $table, $k, $value, "OR");
                     }
                 });
+            } else if(is_array($value)){
+                // 兼容<1.0.7版本
+                if (count($value) > 1 && in_array(strtolower($value[0]), $operator)) {
+                    $key = $key .'@'. $value[0];
+                    $value = $value[1];
+                }
+                $query = $this->parseFilterItem($query, $table, $key, $value, $logic);
             } else {
                 $query = $this->parseFilterItem($query, $table, $key, $value, $logic);            
             }

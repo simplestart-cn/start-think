@@ -77,7 +77,7 @@ class ConfigService extends Service
     }
     
     /**
-     * 解析缓存名称
+     * 解析配置名称
      * @param string $name 配置名称
      * @param string $app  应用名称
      * @return array

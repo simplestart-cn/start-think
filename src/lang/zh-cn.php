@@ -23,6 +23,8 @@ return [
     'csrf_error'     => '表单令牌验证失败，请刷新页面再试~',
     'method_limit'   => '仅限 %s 方法.',
     'unknow_config'  => '未知配置',
+    'app_is_runing'  => '应用运行中',
+    'app_not_installed' => '应用未安装',
     'app_already_exist' => '应用已存在',
     'app_does_not_exist' => '应用不存在'
 ];
