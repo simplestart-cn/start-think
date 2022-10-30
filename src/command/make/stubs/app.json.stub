@@ -1,7 +1,7 @@
 {
   "icon": "",
   "name": "{%appName%}",
-  "entry": "{$appName}/index",
+  "entry": "{%appName%}/index",
   "title": "应用名称",
   "summary": "应用简介",
   "description": "应用详情",
@@ -10,8 +10,8 @@
   "licence": "",
   "author": "",
   "documentation": {
-    "guide": "使用者手册",
-    "developer": "开发者手册"
+    "guide": "使用手册",
+    "developer": "开发手册"
   },
   "dependencies": [],
   "startcms": {

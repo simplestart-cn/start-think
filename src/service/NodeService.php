@@ -128,9 +128,9 @@ class NodeService extends Service
                 'issuper' => $method['issuper'],
                 'isadmin' => $method['isadmin'],
                 'islogin' => $method['islogin'],
-                'ismenu' => $method['ismenu'],
-                'isview' => $method['isview'],
-                'isopen' => $method['isopen']
+                'ismenu'  => $method['ismenu'],
+                'isview'  => $method['isview'],
+                'isopen'  => $method['isopen']
             ];
             $nodes[$parent] = [
                 'node' => $parent,
