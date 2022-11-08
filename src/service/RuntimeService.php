@@ -78,7 +78,7 @@ class RuntimeService extends Service
         }
 
         if (empty($data['app_debug']) || !is_string($data['app_debug'])) {
-            $data['app_debug'] = env('APP_DEBUG');
+            $data['app_debug'] = env('APP_DEBUG') ?? false;
         }
 
         return is_null($key) ? $data : (isset($data[$key]) ? $data[$key] : null);
