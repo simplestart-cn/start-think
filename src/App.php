@@ -252,7 +252,7 @@ class App
 
         // 加载应用事件
         $apps = $this->app->cache->get('apps', []);
-        if (empty($apps)) {
+        if (env('APP_DEBUG') || empty($apps)) {
             $apps = AppService::getApps();
             $this->app->cache->set('apps', $apps);
         }

@@ -48,7 +48,7 @@ class RuntimeService extends Service
             }
 
         }
-        $file            = "{$this->app->getRootPath()}runtime/config.json";
+        $file            = "{$this->app->getRuntimePath()}/config.json";
         $data['app_map'] = is_null($map) ? [] : array_merge($data['app_map'], $map);
         $data['app_host'] = is_null($domain) ? [] : array_merge($data['app_host'], $domain);
         $data['app_debug'] = is_null($debug) ? $data['app_debug'] : $debug;
@@ -63,7 +63,7 @@ class RuntimeService extends Service
      */
     public function getRuntime($key = null)
     {
-        $file = "{$this->app->getRootPath()}runtime/config.json";
+        $file = "{$this->app->getRuntimePath()}/config.json";
         $data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
         if (empty($data) || !is_array($data)) {
             $data = [];
