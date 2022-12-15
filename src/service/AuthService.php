@@ -52,7 +52,7 @@ class AuthService extends Service
             $temp['node']      = $item['node'];
             $temp['is_super']  = $auth['is_super'] ?? $item['issuper'];
             $temp['is_admin']  = $auth['is_admin'] ?? $item['isadmin'];
-            $temp['is_open']   = $auth['is_open'] ?? $item['isopen'];
+            $temp['is_route']   = $auth['is_route'] ?? $item['isroute'];
             $temp['is_auth']   = $auth['is_auth'] ?? (boolean)$auth;
             $temp['is_menu']   = $auth['is_menu'] ?? $item['ismenu'];
             $temp['parent']    = $auth['parent'] ?? $item['parent'];

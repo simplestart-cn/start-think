@@ -36,7 +36,6 @@ class {%className%} extends Controller
     {
         $input = $this->formValidate([
             'keyword.default'  => '',
-            'is_deleted.value' => 0
         ]);
         if (!empty($input['keyword'])) {
             $input['title@like'] = $input['keyword'];
@@ -66,7 +65,6 @@ class {%className%} extends Controller
         $input = $this->formValidate([
             'keyword.default'  => '',
             'status.value'     => 1,
-            'is_deleted.value' => 0
         ]);
         if (!empty($input['keyword'])) {
             $input['title@like'] = $input['keyword'];
@@ -324,7 +322,6 @@ class {%className%} extends Controller
         $input = $this->formValidate([
             'keyword.default'  => '',
             'status.value'     => 1,
-            'is_deleted.value' => 0,
             'per_page.default' => 2000
         ]);
         if (!empty($input['keyword'])) {

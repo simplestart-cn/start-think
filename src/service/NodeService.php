@@ -88,7 +88,7 @@ class NodeService extends Service
                 !empty($method['islogin']) ||
                 !empty($method['ismenu']) ||
                 !empty($method['isview']) ||
-                !empty($method['isopen'])
+                !empty($method['isroute'])
                 )) {
                 in_array($parent, $parents) or array_push($parents, $parent);
                 $nodes[$node] = [
@@ -101,7 +101,7 @@ class NodeService extends Service
                     'islogin' => $method['islogin'],
                     'ismenu' => $method['ismenu'],
                     'isview' => $method['isview'],
-                    'isopen' => $method['isopen']
+                    'isroute' => $method['isroute']
                 ];
             } elseif ($count === 1 && in_array($parent, $parents)) {
                 $nodes[$node] = [
@@ -114,7 +114,7 @@ class NodeService extends Service
                     'islogin' => $method['islogin'],
                     'ismenu' => $method['ismenu'],
                     'isview' => $method['isview'],
-                    'isopen' => $method['isopen']
+                    'isroute' => $method['isroute']
                 ];
             }
         }
@@ -130,7 +130,7 @@ class NodeService extends Service
                 'islogin' => $method['islogin'],
                 'ismenu'  => $method['ismenu'],
                 'isview'  => $method['isview'],
-                'isopen'  => $method['isopen']
+                'isroute'  => $method['isroute']
             ];
             $nodes[$parent] = [
                 'node' => $parent,
@@ -142,7 +142,7 @@ class NodeService extends Service
                 'islogin' => $method['islogin'],
                 'ismenu' => (boolean)$method['ismenu'],
                 'isview' => 0,
-                'isopen' => $method['isopen']
+                'isroute' => $method['isroute']
             ];
         }
         return array_reverse($nodes);
@@ -238,7 +238,7 @@ class NodeService extends Service
 
         $text = strtr($comment, "\n", ' ');
         $title = preg_replace('/^\/\*\s*\*\s*\*\s*(.*?)\s*\*.*?$/', '$1', $text);
-        foreach (['@auth', '@super', '@admin', '@menu', '@view', '@open'] as $find) if (stripos($title, $find) === 0) {
+        foreach (['@auth', '@super', '@admin', '@menu', '@view', '@route'] as $find) if (stripos($title, $find) === 0) {
             $title = $default;
         }
         $method =  [
@@ -249,7 +249,7 @@ class NodeService extends Service
             'islogin' => intval(preg_match('/@login\s*/i', $text)),  // 登录即可访问
             'ismenu'  => intval(preg_match('/@menu\s*/i', $text)),   // 作为菜单显示
             'isview'  => intval(preg_match('/@view\s*/i', $text)),   // 渲染视图模板
-            'isopen'  => intval(preg_match('/@open\s*/i', $text)),   // 是否开放菜单
+            'isroute'  => intval(preg_match('/@route\s*/i', $text)), // 仅作前端路由
         ];
         // 匹配设置的auth值
         if($method['isauth']){

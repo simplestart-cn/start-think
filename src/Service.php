@@ -226,7 +226,6 @@ abstract class Service
                 }, []);
                 $model = self::getInfo($where);
                 if ($model) {
-                    $item['is_deleted'] = 0;
                     $model->save($item) ? $success++ : $error++;
                 } else {
                     $model = self::model();
@@ -244,21 +243,22 @@ abstract class Service
 
     /**
      * 删除记录
-     * @param  array  $filter [description]
+     * @param  array  $filter  删除条件
+     * @param  boolean $force  是否硬删除
      * @return boolean         [description]
      */
-    public static function remove($filter)
+    public static function remove($filter, $force = false)
     {
         if (is_string($filter) && strstr($filter, ',') !== false) {
             $filter = explode(',', $filter);
         }
         $model = self::model();
         if (!is_array($filter)) {
-            return $model->find($filter)->remove();
+            return $model->find($filter)->remove($force);
         } else {
             $list = $model->where($model->getPk(), 'in', $filter)->select();
             foreach ($list as $item) {
-                $item->remove();
+                $item->remove($force);
             }
             return true;
         }

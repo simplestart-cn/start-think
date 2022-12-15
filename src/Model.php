@@ -15,6 +15,7 @@ namespace start;
 use think\Container;
 use think\facade\Cache;
 use think\db\BaseQuery as Query;
+use think\model\concern\SoftDelete;
 
 /**
  * 自定义模型基类
@@ -23,6 +24,13 @@ use think\db\BaseQuery as Query;
  */
 class Model extends \think\Model
 {
+    /**
+     * 使用软删除
+     */
+    use SoftDelete;
+    protected $deleteTime = 'delete_time';
+    protected $defaultSoftDelete = 0;
+
     /**
      * 使用全局查询
      *
@@ -212,15 +220,14 @@ class Model extends \think\Model
     }
 
     /**
-     * 软删除
+     * 删除数据
      */
-    public function remove()
+    public function remove($force = false)
     {
-        if (isset($this->is_deleted)) {
-            return $this->save(['is_deleted' => 1]);
-        } else {
-            return $this->delete();
+        if($force){
+            return $this->force()->delete();
         }
+        return $this->delete();
     }
 
     /**
@@ -300,9 +307,9 @@ class Model extends \think\Model
         $query->model($this)
             ->json($this->json, $this->jsonAssoc)
             ->setFieldType(array_merge($this->schema, $this->jsonType));
-
         // 软删除
-        if (property_exists($this, 'withTrashed') && !$this->withTrashed) {
+        $field = $this->getDeleteTimeField(true);
+        if ($field && !$this->withTrashed) {
             $this->withNoTrashed($query);
         }
         // 全局作用域(修复关联查询作用域问题,修复存在主键条件时依然使用全局查询的问题)

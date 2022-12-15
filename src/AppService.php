@@ -349,7 +349,7 @@ class AppService extends Service
      * @param  string  $name [description]
      * @return [type]        [description]
      */
-    public static function remove($name)
+    public static function remove($name, $force = false)
     {
         // 删除对应数据表
         // ....
