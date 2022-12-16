@@ -1,7 +1,7 @@
 {
-  "icon": "",
+  "icon": "example",
   "name": "{%appName%}",
-  "entry": "{%appName%}/index",
+  "entry": "/{%appName%}/index",
   "title": "应用名称",
   "summary": "应用简介",
   "description": "应用详情",

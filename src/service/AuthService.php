@@ -52,7 +52,7 @@ class AuthService extends Service
             $temp['node']      = $item['node'];
             $temp['is_super']  = $auth['is_super'] ?? $item['issuper'];
             $temp['is_admin']  = $auth['is_admin'] ?? $item['isadmin'];
-            $temp['is_route']   = $auth['is_route'] ?? $item['isroute'];
+            $temp['is_route']  = $auth['is_route'] ?? $item['isroute'];
             $temp['is_auth']   = $auth['is_auth'] ?? (boolean)$auth;
             $temp['is_menu']   = $auth['is_menu'] ?? $item['ismenu'];
             $temp['parent']    = $auth['parent'] ?? $item['parent'];
@@ -67,8 +67,13 @@ class AuthService extends Service
         // 自定义权限
         $appInfo = AppService::getPackInfo($app);
         if ($appInfo) {
+            $authNode[$app]['app']   = $appInfo['name'];
+            $authNode[$app]['name']  = $appInfo['name'];
+            $authNode[$app]['node']  = $appInfo['name'];
+            $authNode[$app]['path']  = '/' . $appInfo['name'];
             $authNode[$app]['icon']  = $appInfo['icon'] ?? '';
             $authNode[$app]['title'] = $appInfo['title'] ?? $appInfo['name'];
+            $authNode[$app]['is_menu'] = true;
             if (isset($appInfo['auth'])) {
                 foreach ($appInfo['auth'] as &$extend) {$extend['app'] = $app;}
                 $authExtend = array_combine(array_column($appInfo['auth'], 'node'), array_values($appInfo['auth']));
@@ -76,7 +81,7 @@ class AuthService extends Service
             }
         }
         // 无权限节点
-        if(empty($authNode) || (count($authNode) == 1 && !isset($authNode[0]['node']))){
+        if(empty($authNode)){
             return true;
         }
         // 格式化权限
@@ -115,9 +120,6 @@ class AuthService extends Service
     {
         $auths = array();
         foreach ($nodes as $key => &$data) {
-            if ($pid === 0 && empty($data['children'])) {
-                continue;
-            }
             $temp        = $data;
             $temp['pid'] = $pid;
             unset($temp['parent']);

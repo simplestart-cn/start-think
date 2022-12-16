@@ -224,7 +224,8 @@ class Model extends \think\Model
      */
     public function remove($force = false)
     {
-        if($force){
+        $fields = $this->getTableFields();
+        if($force || !isset($fields[$this->deleteTime])){
             return $this->force()->delete();
         }
         return $this->delete();
@@ -308,8 +309,8 @@ class Model extends \think\Model
             ->json($this->json, $this->jsonAssoc)
             ->setFieldType(array_merge($this->schema, $this->jsonType));
         // 软删除
-        $field = $this->getDeleteTimeField(true);
-        if ($field && !$this->withTrashed) {
+        $fields = $query->getTableFields();
+        if (isset($fields[$this->deleteTime]) && !$this->withTrashed) {
             $this->withNoTrashed($query);
         }
         // 全局作用域(修复关联查询作用域问题,修复存在主键条件时依然使用全局查询的问题)

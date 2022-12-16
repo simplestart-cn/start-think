@@ -322,16 +322,7 @@ class AppService extends Service
             }
             // 删除权限菜单
             AuthService::model()->where(['app' => $name])->delete();
-            // 删除默认配置
-            if (isset($app['config']) && count($app['config'])) {
-                $config = $app['config'];
-                foreach ($config as &$conf) {
-                    $where['app']       = strtolower($conf['app'] ?? $app['name']);
-                    $where['field']     = $conf['field'];
-                    ConfigService::model()->where($where)->delete();
-                }
-            }
-            // 删除动态配置
+            // 删除应用配置
             ConfigService::model()->where(['app' => $name])->delete();
             // 删除应用记录
             $model->remove();
