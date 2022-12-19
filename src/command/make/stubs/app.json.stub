@@ -2,16 +2,15 @@
   "icon": "example",
   "name": "{%appName%}",
   "entry": "/{%appName%}/index",
-  "title": "应用名称",
-  "summary": "应用简介",
-  "description": "应用详情",
+  "title": "/{%appName%}应用",
+  "summary": "/{%appName%}应用简介",
+  "description": "/{%appName%}应用详情",
   "version": "v1.0.0",
-  "category": [],
-  "licence": "",
   "author": "",
+  "licence": "",
   "documentation": {
-    "guide": "使用手册",
-    "developer": "开发手册"
+    "guide": "/{%appName%}使用手册",
+    "developer": "/{%appName%}开发手册"
   },
   "dependencies": [],
   "startcms": {
