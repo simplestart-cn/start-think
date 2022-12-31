@@ -267,7 +267,7 @@ class NodeService extends Service
                     if(is_array($method['isauth'])){
                         $method['isauth']['view'] = $view[1];
                     }else{
-                        $method['isauth'] = ['is_menu' => $method['ismenu'], 'view' => $view[1]];
+                        $method['isauth'] = ['menu' => $method['ismenu'], 'view' => $view[1]];
                     }
                 }
             }
