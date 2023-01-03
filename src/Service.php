@@ -13,7 +13,9 @@
 namespace start;
 
 use think\App;
+use start\Model;
 use think\Container;
+use think\Collection;
 
 /**
  * 自定义服务基类
@@ -36,7 +38,7 @@ abstract class Service
 
     /**
      * 服务模型
-     * @var string
+     * @var Model
      */
     public $model;
 
@@ -92,7 +94,7 @@ abstract class Service
 
     /**
      * 获取模型
-     * @return [type]       [description]
+     * @return Model
      */
     public static function model()
     {
@@ -105,8 +107,8 @@ abstract class Service
 
     /**
      * 获取模型
-     * @param  [type] $name 全局查询模型
-     * @return [type]       [description]
+     * @param  string      $scope       查询范围
+     * @return object      $this->model 模型实例
      */
     public static function withoutScope(array $scope = null)
     {
@@ -119,9 +121,10 @@ abstract class Service
 
     /**
      * 获取列表
-     * @param  array  $filter [description]
-     * @param  array  $order  [description]
-     * @return collection     [description]
+     * @param  array  $filter 查询条件
+     * @param  array  $order  排序方式
+     * @param  array  $with   关联查询
+     * @return Collection
      */
     public static function getList($filter = [], $order = [], $with = null)
     {
@@ -131,9 +134,10 @@ abstract class Service
 
     /**
      * 获取分页
-     * @param  array  $filter [description]
-     * @param  array  $order  [description]
-     * @return collection     [description]
+     * @param  array  $filter 查询条件
+     * @param  array  $order  排序方式
+     * @param  array  $with   关联查询
+     * @return Collection
      */
     public static function getPage($filter = [], $order = [], $with = null)
     {
@@ -143,8 +147,9 @@ abstract class Service
 
     /**
      * 获取详情
-     * @param  array  $filter [description]
-     * @return [type]         [description]
+     * @param  array  $filter 查询条件
+     * @param  array  $with   关联查询
+     * @return Model
      */
     public static function getInfo($filter, $with = null)
     {
@@ -155,7 +160,7 @@ abstract class Service
     /**
      * 创建记录
      * @param  array  $input [description]
-     * @return object        [description]
+     * @return Model
      */
     public static function create($input)
     {
@@ -170,7 +175,7 @@ abstract class Service
     /**
      * 更新记录
      * @param  array  $input [description]
-     * @return object        [description]
+     * @return Model
      */
     public static function update($input)
     {
@@ -266,7 +271,7 @@ abstract class Service
 
     /**
      * 开启事务(待升级为异步事务)
-     * @return [type] [description]
+     * @return void
      */
     public static function startTrans()
     {
@@ -275,7 +280,7 @@ abstract class Service
 
     /**
      * 事务提交(待升级为异步事务)
-     * @return [type] [description]
+     * @return void
      */
     public static function startCommit()
     {
@@ -284,7 +289,7 @@ abstract class Service
 
     /**
      * 事务回滚(待升级为异步事务)
-     * @return [type] [description]
+     * @return void
      */
     public static function startRollback()
     {
