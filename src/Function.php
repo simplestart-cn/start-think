@@ -10,6 +10,7 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
+use start\AppService;
 use think\exception\HttpResponseException;
 use start\extend\HttpExtend;
 use start\extend\CodeExtend;
@@ -21,17 +22,26 @@ if (!function_exists('debug')) {
     /**
      * 打印输出数据到文件
      * @param mixed $data 输出的数据
-     * @param boolean $new 强制替换文件
      * @param string $file 保存文件名称
+     * @param boolean $replace 强制替换文件
      */
-    function debug($data, $file = null, $new = false)
+    function debug($data, $file = null, $replace = false)
     {
-        RuntimeService::instance()->debug($data, $file, $new);
+        RuntimeService::instance()->debug($data, $file, $replace);
+    }
+}
+if (!function_exists('app_exist')) {
+    /**
+     * 应用是否存在
+     */
+    function app_exist($name)
+    {
+        return AppService::isActive($name);
     }
 }
 if (!function_exists('data_path')) {
     /**
-     * 数据目录(临时放这)
+     * 数据目录
      * @throws ReflectionException
      */
     function data_path()

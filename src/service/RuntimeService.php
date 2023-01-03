@@ -126,10 +126,10 @@ class RuntimeService extends Service
     /**
      * 打印输出数据到文件
      * @param mixed $data 输出的数据
-     * @param boolean $new 强制替换文件
-     * @param string|null $file 文件名称
+     * @param string $file 文件名称
+     * @param boolean $replace 强制替换文件
      */
-    public function debug($data, $file = null, $new = false)
+    public function debug($data, $file = null, $replace = false)
     {
         if (is_null($file)) {
             $path = $this->app->getRuntimePath() . 'debug';
@@ -139,7 +139,7 @@ class RuntimeService extends Service
             $file = $path . DIRECTORY_SEPARATOR . date('Ymd') . '.log';
         }
         $str = (is_string($data) ? $data : ((is_array($data) || is_object($data)) ? print_r($data, true) : var_export($data, true))) . PHP_EOL;
-        $new ? file_put_contents($file, $str) : file_put_contents($file, $str, FILE_APPEND);
+        $replace ? file_put_contents($file, $str) : file_put_contents($file, $str, FILE_APPEND);
     }
 
     /**
