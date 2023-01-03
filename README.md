@@ -1,8 +1,8 @@
 # Library for StartCMS
-**start-think 是一个基于ThinkORM封装的一套多应用管理类库**  
-**始终秉承 开源 开放 自由的理念**  
-**让我们简单地开始!**  
-**Simplestart!**  
+start-think 是一个基于ThinkORM封装的多应用管理类库  
+始终秉承 开源 开放 自由的理念  
+让我们简单地开始!  
+Simplestart!  
 
 ## 主要特性
 - 全局事件：实现事件全站分发，自动监听、自动订阅无需手动绑定
