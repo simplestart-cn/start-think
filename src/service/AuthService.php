@@ -37,7 +37,7 @@ class AuthService extends Service
         $nodes    = NodeService::instance()->getAll($app, true);
         $authNode = array();
         foreach ($nodes as $item) {
-            if($item['issuper'] || $item['isadmin'] || $item['islogin']){
+            if(($item['issuper'] || $item['isadmin'] || $item['islogin']) && !$item['isroute']){
                 continue;
             }
             $auth              = $item['isauth'];
