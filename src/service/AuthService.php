@@ -50,11 +50,10 @@ class AuthService extends Service
             $temp['status']    = $auth['status'] ?? 1;
             $temp['params']    = $auth['params'] ?? '';
             $temp['node']      = $item['node'];
-            $temp['auth']      = $auth['auth'] ?? (boolean)$auth;
+            $temp['menu']      = $auth['menu'] ?? $item['ismenu'];
             $temp['super']     = $auth['super'] ?? $item['issuper'];
             $temp['admin']     = $auth['admin'] ?? $item['isadmin'];
             $temp['route']     = $auth['route'] ?? $item['isroute'];
-            $temp['menu']      = $auth['menu'] ?? $item['ismenu'];
             $temp['parent']    = $auth['parent'] ?? $item['parent'];
             $temp['path']      = $auth['path'] ?? '/' . str_replace('_', '/', $item['node']);
             $temp['view']      = $auth['view'] ?? ($item['isview'] ? '/'.str_replace('_', '/', $item['node']) : '');
