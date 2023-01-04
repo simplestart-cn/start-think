@@ -72,7 +72,7 @@ class AuthService extends Service
             $authNode[$app]['path']  = '/' . $appInfo['name'];
             $authNode[$app]['icon']  = $appInfo['icon'] ?? '';
             $authNode[$app]['title'] = $appInfo['title'] ?? $appInfo['name'];
-            $authNode[$app]['menu'] = true;
+            $authNode[$app]['menu']  = boolval($appInfo['entry'] ?? false);
             if (isset($appInfo['auth'])) {
                 foreach ($appInfo['auth'] as &$extend) {$extend['app'] = $app;}
                 $authExtend = array_combine(array_column($appInfo['auth'], 'node'), array_values($appInfo['auth']));
