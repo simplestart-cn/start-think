@@ -13,7 +13,7 @@
 namespace start\command;
 
 use start\Command;
-use start\AppService;
+use start\AppManager;
 use start\service\AuthService;
 use think\console\Input;
 use think\console\Output;
@@ -47,7 +47,7 @@ class Auth extends Command
             $res = $service->building($app);
             $output->writeln("{$app} complete!");
         } else {
-            $apps    = AppService::getApps();
+            $apps    = AppManager::getApps();
             if(empty($apps)){
                 $output->writeln("app not found!");
                 return false;

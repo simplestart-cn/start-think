@@ -67,7 +67,7 @@ abstract class Controller extends \stdClass
         $this->request = $app->request;
         $this->app->bind('start\Controller', $this);
         if (in_array($this->request->action(), get_class_methods(__CLASS__))) {
-            $this->error('Access without permission.');
+            $this->error('Access without permission.', 403);
         }
         $this->csrf_message = lang('csrf_error');
         $this->initialize();

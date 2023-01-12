@@ -253,7 +253,7 @@ class App
         // 加载应用事件
         $apps = $this->app->cache->get('apps', []);
         if (env('APP_DEBUG') || empty($apps)) {
-            $apps = AppService::getApps();
+            $apps = AppManager::getApps();
             $this->app->cache->set('apps', $apps);
         }
         if (is_file($rootPath . 'core' . DIRECTORY_SEPARATOR . 'event.php')) {

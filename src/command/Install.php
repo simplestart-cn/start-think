@@ -13,7 +13,7 @@
 namespace start\command;
 
 use start\Command;
-use start\AppService;
+use start\AppManager;
 
 use think\console\Input;
 use think\console\input\Argument;
@@ -102,10 +102,10 @@ class Install extends Command
 
     protected function installFile()
     {
-        $data = AppService::instance()->generateDifference($this->rules, $this->ignore);
+        $data = AppManager::instance()->generateDifference($this->rules, $this->ignore);
         if (empty($data)) $this->output->writeln('No need to update the file if the file comparison is consistent');
         else foreach ($data as $file) {
-            list($state, $mode, $name) = AppService::instance()->fileSynchronization($file);
+            list($state, $mode, $name) = AppManager::instance()->fileSynchronization($file);
             if ($state) {
                 if ($mode === 'add') $this->output->writeln("--- {$name} add successfully");
                 if ($mode === 'mod') $this->output->writeln("--- {$name} update successfully");

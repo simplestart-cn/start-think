@@ -19,9 +19,9 @@ use start\service\AuthService;
 use start\service\ConfigService;
 
 /**
- * App服务
+ * App管理器
  */
-class AppService extends Service
+class AppManager extends Service
 {
 
     public $model = 'start\model\App';
@@ -30,7 +30,7 @@ class AppService extends Service
      * 代码地址
      * @var string
      */
-    protected $uri;
+    protected $api;
 
     /**
      * 项目根目录
@@ -63,15 +63,14 @@ class AppService extends Service
     protected function initialize()
     {
         // 服务地址
-        $this->url = $this->app->config->get('cms.api');
+        $this->api = $this->app->config->get('cms.api');
+        // 框架目录
+        $this->path = strtr(root_path(), '\\', '/');
         // 框架版本
         $this->version = $this->app->config->get('cms.version');
         if (empty($this->version)) {
             $this->version = 'last';
         }
-        // 框架目录
-        $this->path = strtr(root_path(), '\\', '/');
-        
         return $this;
     }
 
@@ -134,11 +133,11 @@ class AppService extends Service
     }
 
     /**
-     * 更新配置
+     * 升级配置
      * @param  array  $name  [description]
      * @return boolea        [description]
      */
-    public static function updateConfig($name)
+    public static function upgradeConfig($name)
     {
         $app = self::getPackInfo($name);
         if (isset($app['config']) && count($app['config'])) {
@@ -172,7 +171,7 @@ class AppService extends Service
         $tempDir = self::getBackupDir();
         $tmpFile = $tempDir . $name . ".zip";
         try {
-            $api = $service->url . '/appstore/download';
+            $api = $service->api . '/appstore/download';
             $params = [
                 'app' => $name,
                 'app_version' => $version,
@@ -207,8 +206,8 @@ class AppService extends Service
     }
 
     /**
-     * 安装(待完成)
-     * @param  [type] $app [description]
+     * 安装
+     * @param  [type] $name [description]
      * @return [type]      [description]
      */
     public static function install($name)
@@ -283,14 +282,14 @@ class AppService extends Service
                 require_once $upgrader;
             }
             // 升级配置信息
-            self::updateConfig($name);
+            self::upgradeConfig($name);
             // 刷新权限菜单
             AuthService::instance()->building($app['name']);
             // 更新应用信息
             $info = self::getPackInfo($name);
             $app->save($info);
             return $info;
-        } catch (HttpResponseException $e) {
+        } catch (\Exception $e) {
             throw_error($e->getMessage());
         } finally {
             // 移除临时文件
@@ -537,7 +536,7 @@ class AppService extends Service
         } catch (ZipException $e) {
             throw_error($e->getMessage());
         } finally {
-            $zipFile->close();
+            $zip->close();
         }
         return true;
     }
@@ -629,7 +628,7 @@ class AppService extends Service
     private function downloadFile($encode)
     {
         $service = self::instance();
-        $result = json_decode(HttpExtend::get("{$service->url}/update/get&encode={$encode}"), true);
+        $result = json_decode(HttpExtend::get("{$service->api}/update/get&encode={$encode}"), true);
         if (empty($result['code'])) {
             return false;
         }
@@ -660,7 +659,7 @@ class AppService extends Service
     {
         $service = self::instance();
         list($this->rules, $this->ignore, $data) = [$rules, $ignore, []];
-        $response = HttpExtend::post("{$service->url}?/appstore/upgrade/tree", [
+        $response = HttpExtend::post("{$service->api}?/appstore/upgrade/tree", [
             'rules' => serialize($this->rules), 'ignore' => serialize($this->ignore),
         ]);
         $result = json_decode($response, true);

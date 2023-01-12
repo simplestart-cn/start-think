@@ -10,7 +10,7 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
-use start\AppService;
+use start\AppManager;
 use think\exception\HttpResponseException;
 use start\extend\HttpExtend;
 use start\extend\CodeExtend;
@@ -36,7 +36,7 @@ if (!function_exists('app_exist')) {
      */
     function app_exist($name)
     {
-        return AppService::isActive($name);
+        return AppManager::isActive($name);
     }
 }
 if (!function_exists('data_path')) {

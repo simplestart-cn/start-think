@@ -13,7 +13,7 @@
 namespace start\service;
 
 use start\Service;
-use start\AppService;
+use start\AppManager;
 use start\extend\DataExtend;
 
 /**
@@ -64,7 +64,7 @@ class AuthService extends Service
         }
 
         // 自定义权限
-        $appInfo = AppService::getPackInfo($app);
+        $appInfo = AppManager::getPackInfo($app);
         if ($appInfo) {
             $authNode[$app]['app']   = $appInfo['name'];
             $authNode[$app]['name']  = $appInfo['name'];
