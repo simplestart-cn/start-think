@@ -24,7 +24,7 @@ class Run extends Command
     {
         $this->setName('run')
             ->addOption('root', 'r', Option::VALUE_OPTIONAL, 'The document root of the application', '')
-            ->addArgument('host', Argument::OPTIONAL, 'Default host: 0.0.0.0:8080')
+            ->addArgument('host', Argument::OPTIONAL, 'Default host: localhost:8080')
             ->setDescription('PHP Built-in Server for StartCMS');
     }
 
@@ -38,7 +38,7 @@ class Run extends Command
             $root = $this->app->getRootPath();
         }
         if (empty($host)) {
-            $host = '0.0.0.0';
+            $host = 'localhost';
         } elseif (stripos($host, ':') !== false) {
             $host = explode(':', $host);
             $port = array_pop($host);

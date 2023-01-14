@@ -119,6 +119,45 @@ class AppManager extends Service
     }
 
     /**
+     * 已启用
+     * @return [type] [description]
+     */
+    public static function getActive()
+    {
+        return self::model()->where('status', 1)->column('name');
+    }
+
+    /**
+     * 获取已安装
+     * @return [type] [description]
+     */
+    public static function getInstalled($filter = [])
+    {
+        $data = self::model()->select()->toArray();
+        return array_combine(array_column($data, 'name'), array_values($data));
+    }
+
+    /**
+     * 获取已下载
+     * @return [type] [description]
+     */
+    public static function getDownloaded($filter = [])
+    {
+        $apps     = [];
+        $basePath = base_path();
+        foreach (self::_scanApps($basePath) as $file) {
+            if (preg_match("|(\w+)/app.json$|i", $file, $matches)) {
+                list($path, $name) = $matches;
+                $info              = json_decode(file_get_contents($basePath . DIRECTORY_SEPARATOR . $path), true);
+                $info['name']      = strtolower($name);
+                $apps[]            = $info;
+            }
+        }
+        $apps = array_combine(array_column($apps, 'name'), array_values($apps));
+        return $apps;
+    }
+
+    /**
      * 更新信息
      * @param  array  $input [description]
      * @return [type]        [description]
@@ -466,45 +505,7 @@ class AppManager extends Service
         return $apps;
     }
 
-    /**
-     * 获取可用的
-     * @return [type] [description]
-     */
-    public static function getActive()
-    {
-        return self::model()->where('status', 1)->column('name');
-    }
-
-    /**
-     * 获取已安装
-     * @return [type] [description]
-     */
-    private static function getInstalled()
-    {
-        $data = self::model()->select()->toArray();
-        return array_combine(array_column($data, 'name'), array_values($data));
-    }
-
-    /**
-     * 获取已下载
-     * @return [type] [description]
-     */
-    private static function getDownloaded()
-    {
-        $apps     = [];
-        $basePath = base_path();
-        foreach (self::_scanApps($basePath) as $file) {
-            if (preg_match("|(\w+)/app.json$|i", $file, $matches)) {
-                list($path, $name) = $matches;
-                $info              = json_decode(file_get_contents($basePath . DIRECTORY_SEPARATOR . $path), true);
-                $info['name']      = strtolower($name);
-                $apps[]            = $info;
-            }
-        }
-        $apps = array_combine(array_column($apps, 'name'), array_values($apps));
-        return $apps;
-    }
-
+    
     /**
      * 获取备份目录
      * @return string
