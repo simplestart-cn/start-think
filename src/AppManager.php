@@ -82,39 +82,87 @@ class AppManager extends Service
      */
     public static function getPage($filter = [], $order = [], $with = null)
     {
-        $origin     = array();
+        $data = [];
+        $total = 0;
+        $per_page = 5;
+        $cur_page = 1;
+        $last_page = 1;
+        $page = $filter['page'] ?? 1;
+        $type = $filter['type'] ?? '';
+        $price = $filter['price'] ?? '';
+        $keyword = $filter['keyword'] ?? '';
+        $category = $filter['category'] ?? '';
         $installed  = self::getInstalled();
         $downloaded = self::getDownloaded();
-        foreach ($downloaded as $name => $app) {
+        switch ($type) {
+                // 已下载的
+            case 'downloaded':
+                $list = self::_filterApps($downloaded, $keyword, $category);
+                $total = count($list);
+                break;
+                // 已安装的
+            case 'installed':
+                $list = self::_filterApps($installed, $keyword, $category);
+                $total = count($list);
+                break;
+                // 未安装的
+            case 'uninstall':
+                $list = array_diff_key($downloaded, $installed);
+                $list = $list = self::_filterApps($list, $keyword, $category);
+                $total = count($list);
+                break;
+            default:
+                // 应用中心
+                $apps = self::fetchAppStore(compact('page','price','keyword','category'));
+                $total = $apps['total'];
+                $list = array_combine(array_column($apps['data'], 'name'), array_values($apps['data']));
+                if(empty($list)){
+                    $list = self::_filterApps($downloaded, $keyword, $category);
+                    $total = count($list);
+                }
+                break;
+        }
+        // 分页补充
+        // if ($page * $per_page < $total){
+            $list = array_slice($list, ($page-1) * $per_page, $per_page);
+            $cur_page = intval($page);
+            $last_page = ceil($total / $per_page);
+        // }
+        // 状态检测
+        foreach ($list as $name => &$app) {
+            $app['installed'] = false;
+            $app['downloaded'] = false;
+            $app['upgradeable'] = false;
             if (!isset($app['version'])) {
-                throw_error('app.json error: ' . $app['name']);
+                throw_error($app['name'] . '应用配置错误: app.json error');
+            }
+            if (isset($downloaded[$name])) {
+                $app['downloaded'] = true;
+                if ($downloaded[$name]['version'] !== $app['version']) {
+                    $app['upgradeable']   = true;
+                }
             }
             if (isset($installed[$name])) {
-                $last              = $installed[$name];
-                $last['installed'] = 1;
-                if ($last['version'] !== $app['version']) {
-                    // 可更新的
-                    $last['updateable']   = 1;
-                    $last['last_version'] = $app['version'];
-                } else {
-                    $last['updateable'] = 0;
-                }
-                $installed[$name] = $last;
-            } else {
-                // 未安装的
-                $app['installed']  = 0;
-                $app['updateable'] = 0;
-                $installed[$name]  = $app;
+                $app['installed'] = true;
             }
         }
-        $origin = array_values($installed);
-        // 暂时模拟分页
+        $data = array_values($list);
+        return compact('data', 'total', 'per_page', 'cur_page', 'last_page');
+    }
+
+    /**
+     * 获取应用
+     * @param [type] $filter
+     * @return void
+     */
+    public static function fetchAppStore($filter = [])
+    {
         return array(
-            'current_page' => 1,
-            'data'         => $origin,
+            'data'         => [],
+            'total'        => 0,
+            'cur_page'     => $filter['page'] ?? 1,
+            'per_page'     => 15,
             'last_page'    => 1,
-            'per_page'     => count($origin),
-            'total'        => count($origin),
         );
     }
 
@@ -155,20 +203,6 @@ class AppManager extends Service
         }
         $apps = array_combine(array_column($apps, 'name'), array_values($apps));
         return $apps;
-    }
-
-    /**
-     * 更新信息
-     * @param  array  $input [description]
-     * @return [type]        [description]
-     */
-    public static function update($input = [])
-    {
-        $model = self::getInfo(['name' => $input['name']]);
-        if (!$model) {
-            throw_error(lang('app_not_installed'));
-        }
-        return $model->save($input);
     }
 
     /**
@@ -228,7 +262,7 @@ class AppManager extends Service
             ];
             $response = HttpExtend::get($api, $params, $options);
             $response = json_decode($response, true);
-            if($response['code'] !== 0){
+            if ($response['code'] !== 0) {
                 throw_error($response['msg']);
             }
             $content = $response['data'];
@@ -505,7 +539,7 @@ class AppManager extends Service
         return $apps;
     }
 
-    
+
     /**
      * 获取备份目录
      * @return string
@@ -595,6 +629,48 @@ class AppManager extends Service
             }
         }
         return $data;
+    }
+
+    /**
+     * 过滤本地应用
+     * @param array $list
+     * @param string $keyword
+     * @param string $category
+     * @return array
+     */
+    private static function _filterApps(array $list, $keyword='', $category = '')
+    {
+        if($keyword) {
+            $list = array_filter($list, function($item) use ($keyword) {
+                if(!empty($item['title'] ?? '')){
+                    if(stripos($item['title'], $keyword) !== false){
+                        return true;
+                    }
+                }
+                if(!empty($item['summary'] ?? '')){
+                    if(stripos($item['summary'], $keyword) !== false){
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+        if(!empty($category)){
+            $list = array_filter($list, function($item) use ($keyword) {
+                if(!empty($item['category'] ?? '')){
+                    if(!is_array($item['category'])){
+                        $category = explode(',', $item['category']);
+                    }else{
+                        $category = $item['category'];
+                    }
+                }
+                if(in_array($category, $category)){
+                    return true;
+                }
+                return false;
+            });
+        }
+        return $list;
     }
 
     /**
