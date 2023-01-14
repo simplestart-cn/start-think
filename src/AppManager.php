@@ -656,15 +656,16 @@ class AppManager extends Service
             });
         }
         if(!empty($category)){
-            $list = array_filter($list, function($item) use ($keyword) {
+            $list = array_filter($list, function($item) use ($category) {
+                $arr = [];
                 if(!empty($item['category'] ?? '')){
                     if(!is_array($item['category'])){
-                        $category = explode(',', $item['category']);
+                        $arr = explode(',', $item['category']);
                     }else{
-                        $category = $item['category'];
+                        $arr = $item['category'];
                     }
                 }
-                if(in_array($category, $category)){
+                if(in_array($category, $arr)){
                     return true;
                 }
                 return false;
