@@ -17,6 +17,7 @@ use PhpZip\Exception\ZipException;
 use start\extend\HttpExtend;
 use start\service\AuthService;
 use start\service\ConfigService;
+use think\facade\Config;
 
 /**
  * App管理器
@@ -37,6 +38,12 @@ class AppManager extends Service
      * @var string
      */
     protected $path;
+
+    /**
+     * 登录账户
+     * @var array
+     */
+    protected $user;
 
     /**
      * 通信令牌
@@ -73,7 +80,7 @@ class AppManager extends Service
         // 框架目录
         $this->path = strtr(root_path(), '\\', '/');
         // 框架令牌
-        $this->token = $this->app->config->get('cms.token');
+        $this->token = $this->getToken();
         // 框架版本
         $this->version = $this->app->config->get('cms.version');
         if (empty($this->version)) {
@@ -121,10 +128,10 @@ class AppManager extends Service
                 break;
             default:
                 // 应用中心
-                $apps = self::fetchStoreApps(compact('page','price','keyword','category'));
+                $apps = self::fetchStoreApps(compact('page', 'price', 'keyword', 'category'));
                 $total = $apps['total'];
                 $list = array_combine(array_column($apps['data'], 'name'), array_values($apps['data']));
-                if(empty($list)){
+                if (empty($list)) {
                     $list = self::_filterApps($downloaded, $keyword, $category);
                     $total = count($list);
                 }
@@ -132,9 +139,9 @@ class AppManager extends Service
         }
         // 分页补充
         // if ($page * $per_page < $total){
-            $list = array_slice($list, ($page-1) * $per_page, $per_page);
-            $cur_page = intval($page);
-            $last_page = ceil($total / $per_page);
+        $list = array_slice($list, ($page - 1) * $per_page, $per_page);
+        $cur_page = intval($page);
+        $last_page = ceil($total / $per_page);
         // }
         // 状态检测
         foreach ($list as $name => &$app) {
@@ -154,11 +161,11 @@ class AppManager extends Service
                 $app['status'] = true;
                 $app['installed'] = true;
                 // 健康状态
-                if(!empty($app['health'] ?? '')){
+                if (!empty($app['health'] ?? '')) {
                     // 检查地址支持http://xxxxxx或者tcp:IP地址+:端口
                     // 如果没有配置健康状态检查地址则被认为是无状态应用服务
-                    $protocol = strtolower(substr($app['health'], 0, strripos($app['health'],":")));
-                    if(!in_array($protocol, ['http','tcp'])){
+                    $protocol = strtolower(substr($app['health'], 0, strripos($app['health'], ":")));
+                    if (!in_array($protocol, ['http', 'tcp'])) {
                         throw_error('健康检查地址仅支持http或者tcp协议');
                     }
                     // ... 待完善
@@ -169,13 +176,196 @@ class AppManager extends Service
         return compact('data', 'total', 'per_page', 'cur_page', 'last_page');
     }
 
-    public function fetchStore()
+    private function getToken()
     {
-        $response = http_get($this->api,['token' => $this->token]);
-        $store = [
+        $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
+        $token = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR . 'cms_token';
+        if(is_file($token)){
+            return @file_get_contents($token);
+        }
+        return '';
+    }
+
+    private function setToken($token)
+    {
+        $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
+        $session = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR;
+        if (!is_dir($session)) {
+            mkdir($session, 0755, true);
+        }
+        $tokenPath = $session . 'cms_token';
+        $result = @file_put_contents($tokenPath, $token);
+        if (!$result) {
+            throw_error('File has no write permission:runtime/session');
+        }
+        return true;
+    }
+    
+    private function resetToken()
+    {
+        $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
+        $token = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR . 'cms_token';
+        if(is_file($token)){
+            return unlink($token);
+        }
+        return true;
+    }
+    
+
+    /**
+     * 获取框架信息
+     * @return void
+     */
+    public function getStore()
+    {
+        $options = [
+            'timeout'         => 30,
+            'connect_timeout' => 30,
+            'verify'          => false,
+            'http_errors'     => false,
+            'headers'         => [
+                'X-REQUESTED-WITH:XMLHttpRequest',
+                'Referer:'.dirname(request()->root(true)),
+                'User-token:'.$this->token,
+            ]
+        ];
+        $result = [
             'title'   => 'StartCMS',
             'version' => $this->version,
+            'upgradeable' => false
         ];
+        try {
+            $api = $this->api . '/core/user/state';
+            $response = HttpExtend::get($api, [], $options);
+            $response = json_decode($response, true);
+            if ($response['code'] !== 0) {
+                $this->resetToken();
+            }else{
+                $user = $response['data']['info'];
+                $result['user'] = [
+                    'uuid'   => $user['uuid'],
+                    'name'   => $user['name'],
+                    'avater' => $user['avatar']
+                ];
+            }
+            return $result;
+        } catch (\Exception $e) {
+            return $result;
+        }
+    }
+
+    /**
+     * 获取验证信息
+     * @param [type] $input
+     * @return void
+     */
+    public function getCaptcha(array $params)
+    {
+        $type = $params['type'] ?? 'image';
+        $params['cms_frame'] = 'ThinkPHP';
+        $params['cms_version'] = $this->version;
+        $options = [
+            'timeout'         => 30,
+            'connect_timeout' => 30,
+            'verify'          => false,
+            'http_errors'     => false,
+            'headers'         => [
+                'X-REQUESTED-WITH:XMLHttpRequest',
+                'Referer:'.dirname(request()->root(true)),
+            ]
+        ];
+        try {
+            if ($type == 'image') {
+                $api = $this->api . '/core/captcha/image';
+            } else {
+                $api = $this->api . '/core/captcha/code';
+            }
+            $response = HttpExtend::get($api, $params, $options);
+            $response = json_decode($response, true);
+            if ($response['code'] !== 0) {
+                throw_error($response['msg']);
+            }
+            return $response['data'];
+        } catch (\HttpResponseException $e) {
+            throw_error($e->getMessage());
+        }
+    }
+
+    /**
+     * 登录应用中心
+     * @param array $input
+     * @return array
+     */
+    public function loginStore(array $params)
+    {
+        $params['cms_frame'] = 'ThinkPHP';
+        $params['cms_version'] = $this->version;
+        $options = [
+            'timeout'         => 30,
+            'connect_timeout' => 30,
+            'verify'          => false,
+            'http_errors'     => false,
+            'headers'         => [
+                'X-REQUESTED-WITH:XMLHttpRequest',
+                'Referer:'.dirname(request()->root(true)),
+            ]
+        ];
+        try {
+            $api = $this->api . '/core/user/login';
+            $response = HttpExtend::post($api, $params, $options);
+            $response = json_decode($response, true);
+            if ($response['code'] !== 0) {
+                throw_error($response['msg']);
+            }
+            $user = $response['data'];
+            $this->setToken($user['token']);
+            return [
+                'user'    => [
+                    'uuid' => $user['uuid'],
+                    'name' => $user['name'],
+                    'avatar' => $user['avatar']
+                ],
+                'config'  => $config = Config::get('cms'),
+                'title'   => 'StartCMS',
+                'frame'   => 'ThinkPHP',
+                'version' => $this->version,
+            ];
+            return $response['data'];
+        } catch (\HttpResponseException $e) {
+            throw_error($e->getMessage());
+        }
+    }
+
+    /**
+     * 注册应用中心
+     * @param [type] $input
+     * @return void
+     */
+    public function registerStore($params)
+    {
+        $params['cms_frame'] = 'ThinkPHP';
+        $params['cms_version'] = $this->version;
+        $options = [
+            'timeout'         => 30,
+            'connect_timeout' => 30,
+            'verify'          => false,
+            'http_errors'     => false,
+            'headers'         => [
+                'X-REQUESTED-WITH:XMLHttpRequest',
+                'Referer:'.dirname(request()->root(true)),
+            ]
+        ];
+        try {
+            $api = $this->api . '/core/user/register';
+            $response = HttpExtend::post($api, $params, $options);
+            $response = json_decode($response, true);
+            if ($response['code'] !== 0) {
+                throw_error($response['msg']);
+            }
+            return $response['data'];
+        } catch (\HttpResponseException $e) {
+            throw_error($e->getMessage());
+        }
     }
 
     /**
@@ -284,8 +474,9 @@ class AppManager extends Service
                 'verify'          => false,
                 'http_errors'     => false,
                 'headers'         => [
-                    'X-REQUESTED-WITH' => 'XMLHttpRequest',
-                    'Referer'          => dirname(request()->root(true))
+                    'X-REQUESTED-WITH:XMLHttpRequest',
+                    'Referer:'.dirname(request()->root(true)),
+                    'User-token:'.$service->token,
                 ]
             ];
             $response = HttpExtend::get($api, $params, $options);
@@ -666,34 +857,34 @@ class AppManager extends Service
      * @param string $category
      * @return array
      */
-    private static function _filterApps(array $list, $keyword='', $category = '')
+    private static function _filterApps(array $list, $keyword = '', $category = '')
     {
-        if($keyword) {
-            $list = array_filter($list, function($item) use ($keyword) {
-                if(!empty($item['title'] ?? '')){
-                    if(stripos($item['title'], $keyword) !== false){
+        if ($keyword) {
+            $list = array_filter($list, function ($item) use ($keyword) {
+                if (!empty($item['title'] ?? '')) {
+                    if (stripos($item['title'], $keyword) !== false) {
                         return true;
                     }
                 }
-                if(!empty($item['summary'] ?? '')){
-                    if(stripos($item['summary'], $keyword) !== false){
+                if (!empty($item['summary'] ?? '')) {
+                    if (stripos($item['summary'], $keyword) !== false) {
                         return true;
                     }
                 }
                 return false;
             });
         }
-        if(!empty($category)){
-            $list = array_filter($list, function($item) use ($category) {
+        if (!empty($category)) {
+            $list = array_filter($list, function ($item) use ($category) {
                 $arr = [];
-                if(!empty($item['category'] ?? '')){
-                    if(!is_array($item['category'])){
+                if (!empty($item['category'] ?? '')) {
+                    if (!is_array($item['category'])) {
                         $arr = explode(',', $item['category']);
-                    }else{
+                    } else {
                         $arr = $item['category'];
                     }
                 }
-                if(in_array($category, $arr)){
+                if (in_array($category, $arr)) {
                     return true;
                 }
                 return false;
