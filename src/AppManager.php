@@ -39,6 +39,12 @@ class AppManager extends Service
     protected $path;
 
     /**
+     * 通信令牌
+     * @var string
+     */
+    protected $token;
+
+    /**
      * 当前版本号
      * @var string
      */
@@ -66,6 +72,8 @@ class AppManager extends Service
         $this->api = $this->app->config->get('cms.api');
         // 框架目录
         $this->path = strtr(root_path(), '\\', '/');
+        // 框架令牌
+        $this->token = $this->app->config->get('cms.token');
         // 框架版本
         $this->version = $this->app->config->get('cms.version');
         if (empty($this->version)) {
@@ -113,7 +121,7 @@ class AppManager extends Service
                 break;
             default:
                 // 应用中心
-                $apps = self::fetchAppStore(compact('page','price','keyword','category'));
+                $apps = self::fetchStoreApps(compact('page','price','keyword','category'));
                 $total = $apps['total'];
                 $list = array_combine(array_column($apps['data'], 'name'), array_values($apps['data']));
                 if(empty($list)){
@@ -143,11 +151,31 @@ class AppManager extends Service
                 }
             }
             if (isset($installed[$name])) {
+                $app['status'] = true;
                 $app['installed'] = true;
+                // 健康状态
+                if(!empty($app['health'] ?? '')){
+                    // 检查地址支持http://xxxxxx或者tcp:IP地址+:端口
+                    // 如果没有配置健康状态检查地址则被认为是无状态应用服务
+                    $protocol = strtolower(substr($app['health'], 0, strripos($app['health'],":")));
+                    if(!in_array($protocol, ['http','tcp'])){
+                        throw_error('健康检查地址仅支持http或者tcp协议');
+                    }
+                    // ... 待完善
+                }
             }
         }
         $data = array_values($list);
         return compact('data', 'total', 'per_page', 'cur_page', 'last_page');
+    }
+
+    public function fetchStore()
+    {
+        $response = http_get($this->api,['token' => $this->token]);
+        $store = [
+            'title'   => 'StartCMS',
+            'version' => $this->version,
+        ];
     }
 
     /**
@@ -155,7 +183,7 @@ class AppManager extends Service
      * @param [type] $filter
      * @return void
      */
-    public static function fetchAppStore($filter = [])
+    public static function fetchStoreApps($filter = [])
     {
         return array(
             'data'         => [],
