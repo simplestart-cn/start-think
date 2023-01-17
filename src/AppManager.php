@@ -408,7 +408,7 @@ class AppManager extends Service
      * 获取已安装
      * @return [type] [description]
      */
-    public static function getInstalled($filter = [])
+    public static function getInstalled()
     {
         $data = self::model()->select()->toArray();
         return array_combine(array_column($data, 'name'), array_values($data));
@@ -463,6 +463,137 @@ class AppManager extends Service
     }
 
     /**
+     * 本地上传
+     * @param string $filename
+     * @param string $action
+     * @return void
+     */
+    public function upload($filename, $action = 'upload', $confirm = false)
+    {
+        if ($action == 'upload') {
+            // 接收文件
+            $file = \request()->file($filename);
+            if (empty($file)) {
+                throw_error('未找到上传文件的信息');
+            }
+            // 文件信息
+            $info = $_FILES[$filename];
+            // 临时目录
+            $tempDir = $this->getDownloadDir();
+            // 临时文件名
+            $tempName = date('YmdHis') . '-' . $info['name'];
+            // 临时文件地址
+            $tempPath = $tempDir . $tempName;
+            // 验证文件并上传
+            $fileInfo = $file->move($tempDir, $tempName);
+            if (empty($fileInfo)) {
+                throw_error($file->getError());
+                return false;
+            }
+            // 解压应用文件到临时目录
+            $tempApp = self::unpack($tempPath);
+            if (!is_file($tempApp . 'app.json')) {
+                unlink($tempPath);
+                self::_removeFolder($tempApp);
+                throw_error('应用配置有误，压缩包根目录未包含app.json');
+            }
+            // 获取应用基础信息
+            $appInfo = json_decode(file_get_contents($tempApp . 'app.json'), true);
+            if (empty($appInfo['name'] ?? '')) {
+                throw_error('未知应用名称');
+            }
+            $appName = strtolower($appInfo['name']);
+            $appPath = base_path() . $appName . DIRECTORY_SEPARATOR;
+            if (is_dir($appPath)) {
+                $cover =  json_decode(file_get_contents($appPath . 'app.json'), true);
+                return [
+                    'step' => 2,
+                    'cover' => true,
+                    'message'  => '已存在同名应用，是否覆盖安装？ 如果不是同一个开发者，请对原应用进行备份！如果是同一个开发者，请确保本次覆盖不影响应用服务！',
+                    'appInfo' => [
+                        'name'    => $appInfo['name'],
+                        'path'    => $tempPath,
+                        'title'   => !empty($appInfo['title'] ?? '') ? $appInfo['title'] : '未知',
+                        'author'  => !empty($appInfo['author'] ?? '') ? $appInfo['author'] : '未知',
+                        'version' => !empty($appInfo['version'] ?? '') ? $appInfo['version'] : '未知',
+                    ],
+                    'coverInfo' => [
+                        'name'    => $cover['name'],
+                        'path'    => $appPath,
+                        'title'   => !empty($cover['title'] ?? '') ? $cover['title'] : '未知',
+                        'author'  => !empty($cover['author'] ?? '') ? $cover['author'] : '未知',
+                        'version' => !empty($cover['version'] ?? '') ? $cover['version'] : '未知',
+                    ]
+                ];
+            }
+            // 无冲突情况下直接解压到应用目录
+            $appPath = self::unpack($tempPath, $appPath);
+            // 删除临时文件
+            unlink($tempPath);
+            self::_removeFolder($tempApp);
+            // 返回应用信息
+            return [
+                'step' => 3,
+                'message'  => '已上传成功，是否立即安装？',
+                'appInfo' => [
+                    'name'    => $appInfo['name'],
+                    'path'    => $appPath,
+                    'title'   => !empty($appInfo['title'] ?? '') ? $appInfo['title'] : '未知',
+                    'author'  => !empty($appInfo['author'] ?? '') ? $appInfo['author'] : '未知',
+                    'version' => !empty($appInfo['version'] ?? '') ? $appInfo['version'] : '未知',
+                ]
+            ];
+        } else if ($action == 'cover') {
+            // 覆盖安装
+            if (!$confirm) {
+                unlink($filename);
+                $tempApp = substr($filename, 0, strrpos($filename, '.')) . DIRECTORY_SEPARATOR;
+                self::_removeFolder($tempApp);
+                return true;
+            } else {
+                // 解压到临时目录
+                $tempApp = self::unpack($filename);
+                // 获取应用基础信息
+                $appInfo = json_decode(file_get_contents($tempApp . 'app.json'), true);
+                $appName = strtolower($appInfo['name']);
+                $appPath = base_path() . $appName . DIRECTORY_SEPARATOR;
+                // 覆盖的应用信息
+                $cover =  json_decode(file_get_contents($appPath . 'app.json'), true);
+                // 解压到应用目录
+                $appPath = self::unpack($filename, $appPath);
+                // 删除临时文件
+                unlink($filename);
+                self::_removeFolder($tempApp);
+                // 返回应用信息
+                return [
+                    'step' => 3,
+                    'cover' => true,
+                    'message'  => '已上传成功，是否立即安装？',
+                    'appInfo' => [
+                        'name'    => $appInfo['name'],
+                        'path'    => $appPath,
+                        'title'   => !empty($appInfo['title'] ?? '') ? $appInfo['title'] : '未知',
+                        'author'  => !empty($appInfo['author'] ?? '') ? $appInfo['author'] : '未知',
+                        'version' => !empty($appInfo['version'] ?? '') ? $appInfo['version'] : '未知',
+                    ],
+                    'coverInfo' => [
+                        'name'    => $cover['name'],
+                        'path'    => $appPath,
+                        'title'   => !empty($cover['title'] ?? '') ? $cover['title'] : '未知',
+                        'author'  => !empty($cover['author'] ?? '') ? $cover['author'] : '未知',
+                        'version' => !empty($cover['version'] ?? '') ? $cover['version'] : '未知',
+                    ]
+                ];
+            }
+        } else {
+            if (is_file($filename)) {
+                unlink($filename);
+            }
+            return true;
+        }
+    }
+
+    /**
      * 下载(待完成)
      * @param  [type] $app [description]
      * @return [type]      [description]
@@ -470,7 +601,7 @@ class AppManager extends Service
     public static function download($name, $version)
     {
         $service = self::instance();
-        $tempDir = self::getBackupDir();
+        $tempDir = self::getDownloadDir();
         $tmpFile = $tempDir . $name . ".zip";
         try {
             $api = $service->api . '/appstore/download';
@@ -500,7 +631,7 @@ class AppManager extends Service
         } catch (\Exception $e) {
             throw_error($e->getMessage());
         }
-
+        // 保存文件信息
         if ($write = fopen($tmpFile, 'w')) {
             fwrite($write, $content);
             fclose($write);
@@ -567,7 +698,7 @@ class AppManager extends Service
     public static function upgrade($name, $version)
     {
         $app = self::getInfo(['name' => $name]);
-        $path = base_path() . $name . DIRECTORY_SEPARATOR;
+        $appPath = base_path() . $name . DIRECTORY_SEPARATOR;
         if ($app['status']) {
             throw_error(lang('app_is_runing'));
         }
@@ -575,13 +706,13 @@ class AppManager extends Service
         $tmpFile = self::download($name, $version);
         // 备份应用
         self::backup($name);
-        // 删除旧版
-        self::_removeFolder($path);
         try {
+            // 删除旧版
+            self::_removeFolder($appPath);
             // 解压应用文件
-            self::unpack($name);
+            self::unpack($tmpFile, $appPath);
             // 执行升级脚本
-            $upgrader = $path . 'installer' . DIRECTORY_SEPARATOR . 'upgrade.php';
+            $upgrader = $appPath . 'installer' . DIRECTORY_SEPARATOR . 'upgrade.php';
             if (file_exists($upgrader)) {
                 require_once $upgrader;
             }
@@ -777,7 +908,20 @@ class AppManager extends Service
      */
     private static function getBackupDir()
     {
-        $dir = runtime_path() . 'backup';
+        $dir = runtime_path() . 'backup' . DIRECTORY_SEPARATOR;
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        return $dir;
+    }
+
+    /**
+     * 获取下载目录
+     * @return string
+     */
+    private static function getDownloadDir()
+    {
+        $dir = runtime_path() . 'download' . DIRECTORY_SEPARATOR;
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -808,37 +952,37 @@ class AppManager extends Service
     }
 
     /**
-     * 解压文件
-     *
-     * @param [type] $name
-     * @return void
+     * 解压文件(默认当前目录)
+     * @param string $filePath
+     * @param string $targetPath
+     * @return string $targetPath
      */
-    private static function unpack($name)
+    private static function unpack(string $filePath, $targetPath = '')
     {
-        if (!$name) {
-            throw new Exception('Invalid parameters');
+        if (!is_file($filePath)) {
+            throw_error('File Not Found');
         }
-        $appPath = base_path() . $name;
-        $tempDir = self::getBackupDir();
-        $tempFile = $tempDir . $name . '.zip';
-        if (!is_dir($appPath)) {
-            @mkdir($appPath, 0755);
+        if (empty($targetPath)) {
+            $targetPath = substr($filePath, 0, strrpos($filePath, '.')) . DIRECTORY_SEPARATOR;
+        }
+        if (!is_dir($targetPath)) {
+            mkdir($targetPath, 0755, true);
         }
         $zip = new ZipFile();
         try {
-            $zip->openFile($tempFile);
+            $zip->openFile($filePath);
         } catch (ZipException $e) {
             $zip->close();
-            throw_error('Unable to open the zip file');
+            throw_error($e->getMessage());
         }
         try {
-            $zip->extractTo($appPath);
+            $zip->extractTo($targetPath);
         } catch (ZipException $e) {
-            throw_error('Unable to extract the file');
+            throw_error($e->getMessage());
         } finally {
             $zip->close();
         }
-        return $appPath;
+        return $targetPath;
     }
 
 
@@ -937,7 +1081,7 @@ class AppManager extends Service
     private function downloadFile($encode)
     {
         $service = self::instance();
-        $result = json_decode(HttpExtend::get("{$service->api}/update/get&encode={$encode}"), true);
+        $result = json_decode(HttpExtend::get("{$service->api}/appStore/upgrade/get&encode={$encode}"), true);
         if (empty($result['code'])) {
             return false;
         }
