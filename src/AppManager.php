@@ -40,12 +40,6 @@ class AppManager extends Service
     protected $path;
 
     /**
-     * 登录账户
-     * @var array
-     */
-    protected $user;
-
-    /**
      * 通信令牌
      * @var string
      */
@@ -77,10 +71,10 @@ class AppManager extends Service
     {
         // 服务地址
         $this->api = $this->app->config->get('cms.api');
-        // 框架目录
-        $this->path = strtr(root_path(), '\\', '/');
         // 框架令牌
         $this->token = $this->getToken();
+        // 框架目录
+        $this->path = root_path();
         // 框架版本
         $this->version = $this->app->config->get('cms.version');
         if (empty($this->version)) {
@@ -90,7 +84,7 @@ class AppManager extends Service
     }
 
     /**
-     * 获取应用列表
+     * 获取应用
      * @param  array  $filter [description]
      * @param  array  $order  [description]
      * @return [type]         [description]
@@ -99,7 +93,7 @@ class AppManager extends Service
     {
         $data = [];
         $total = 0;
-        $per_page = 5;
+        $per_page = 15;
         $cur_page = 1;
         $last_page = 1;
         $page = $filter['page'] ?? 1;
@@ -137,12 +131,12 @@ class AppManager extends Service
                 }
                 break;
         }
-        // 分页补充
-        // if ($page * $per_page < $total){
-        $list = array_slice($list, ($page - 1) * $per_page, $per_page);
-        $cur_page = intval($page);
-        $last_page = ceil($total / $per_page);
-        // }
+        // 本地应用补充
+        if (count($list) > $per_page) {
+            $list = array_slice($list, ($page - 1) * $per_page, $per_page);
+            $cur_page = intval($page);
+            $last_page = ceil($total / $per_page);
+        }
         // 状态检测
         foreach ($list as $name => &$app) {
             $app['installed'] = false;
@@ -176,17 +170,26 @@ class AppManager extends Service
         return compact('data', 'total', 'per_page', 'cur_page', 'last_page');
     }
 
+    /**
+     * 获取token
+     * @return string
+     */
     private function getToken()
     {
         $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
         $token = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR . 'cms_token';
-        if(is_file($token)){
+        if (is_file($token)) {
             return @file_get_contents($token);
         }
         return '';
     }
 
-    private function setToken($token)
+    /**
+     * 设置Token
+     * @param string $token
+     * @return boolean
+     */
+    private function setToken(string $token)
     {
         $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
         $session = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR;
@@ -196,24 +199,28 @@ class AppManager extends Service
         $tokenPath = $session . 'cms_token';
         $result = @file_put_contents($tokenPath, $token);
         if (!$result) {
-            throw_error('File has no write permission:runtime/session');
+            throw_error('No write permission:runtime/session');
         }
         return true;
     }
-    
+
+    /**
+     * 重置Token
+     * @return boolean
+     */
     private function resetToken()
     {
         $runtime = rtrim(runtime_path(), DIRECTORY_SEPARATOR);
         $token = substr($runtime, 0, strrpos($runtime, DIRECTORY_SEPARATOR) + 1) . 'session' . DIRECTORY_SEPARATOR . 'cms_token';
-        if(is_file($token)){
+        if (is_file($token)) {
             return unlink($token);
         }
         return true;
     }
-    
+
 
     /**
-     * 获取框架信息
+     * 获取框架
      * @return void
      */
     public function getStore()
@@ -224,9 +231,10 @@ class AppManager extends Service
             'verify'          => false,
             'http_errors'     => false,
             'headers'         => [
-                'X-REQUESTED-WITH:XMLHttpRequest',
-                'Referer:'.dirname(request()->root(true)),
-                'User-token:'.$this->token,
+                'Referer' => dirname(request()->root(true)),
+                'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                'User-Agent' => 'CmsClient',
+                'User-Token' => $this->token
             ]
         ];
         $result = [
@@ -240,7 +248,7 @@ class AppManager extends Service
             $response = json_decode($response, true);
             if ($response['code'] !== 0) {
                 $this->resetToken();
-            }else{
+            } else {
                 $user = $response['data']['info'];
                 $result['user'] = [
                     'uuid'   => $user['uuid'],
@@ -270,8 +278,9 @@ class AppManager extends Service
             'verify'          => false,
             'http_errors'     => false,
             'headers'         => [
-                'X-REQUESTED-WITH:XMLHttpRequest',
-                'Referer:'.dirname(request()->root(true)),
+                'Referer' => dirname(request()->root(true)),
+                'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                'User-Agent' => 'CmsClient'
             ]
         ];
         try {
@@ -306,8 +315,9 @@ class AppManager extends Service
             'verify'          => false,
             'http_errors'     => false,
             'headers'         => [
-                'X-REQUESTED-WITH:XMLHttpRequest',
-                'Referer:'.dirname(request()->root(true)),
+                'Referer' => dirname(request()->root(true)),
+                'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                'User-Agent' => 'CmsClient'
             ]
         ];
         try {
@@ -351,8 +361,9 @@ class AppManager extends Service
             'verify'          => false,
             'http_errors'     => false,
             'headers'         => [
-                'X-REQUESTED-WITH:XMLHttpRequest',
-                'Referer:'.dirname(request()->root(true)),
+                'Referer' => dirname(request()->root(true)),
+                'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                'User-Agent' => 'CmsClient'
             ]
         ];
         try {
@@ -474,9 +485,10 @@ class AppManager extends Service
                 'verify'          => false,
                 'http_errors'     => false,
                 'headers'         => [
-                    'X-REQUESTED-WITH:XMLHttpRequest',
-                    'Referer:'.dirname(request()->root(true)),
-                    'User-token:'.$service->token,
+                    'Referer' => dirname(request()->root(true)),
+                    'X-REQUESTED-WITH' => 'XMLHttpRequest',
+                    'User-Agent' => 'CmsClient',
+                    'User-Token' => $service->token
                 ]
             ];
             $response = HttpExtend::get($api, $params, $options);

@@ -80,7 +80,14 @@ class HttpExtend
         curl_setopt($curl, CURLOPT_USERAGENT, self::getUserAgent());
         // CURL 头信息设置
         if (!empty($options['headers'])) {
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $options['headers']);
+            if(isset($options['headers'][0])){
+                $headers = $options['headers'];
+            }else{
+                $headers = array_map(function($key, $value){
+                    return $key . ':' . $value;
+                }, array_keys($options['headers']), $options['headers']);
+            }
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         }
         // Cookie 信息设置
         if (!empty($options['cookie'])) {
