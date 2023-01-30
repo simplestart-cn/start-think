@@ -466,9 +466,10 @@ class AppManager extends Service
      * 本地上传
      * @param string $filename
      * @param string $action
+     * @param boolean $cover
      * @return void
      */
-    public function upload($filename, $action = 'upload', $confirm = false)
+    public function upload($filename, $action = 'upload', $cover = false)
     {
         if ($action == 'upload') {
             // 接收文件
@@ -479,24 +480,29 @@ class AppManager extends Service
             // 文件信息
             $info = $_FILES[$filename];
             // 临时目录
-            $tempDir = $this->getDownloadDir();
+            $downDir = $this->getDownloadDir();
             // 临时文件名
             $tempName = date('YmdHis') . '-' . $info['name'];
             // 临时文件地址
-            $tempPath = $tempDir . $tempName;
+            $tempPath = $downDir . $tempName;
             // 验证文件并上传
-            $fileInfo = $file->move($tempDir, $tempName);
+            $fileInfo = $file->move($downDir, $tempName);
             if (empty($fileInfo)) {
                 throw_error($file->getError());
                 return false;
             }
             // 解压应用文件到临时目录
-            $tempApp = self::unpack($tempPath);
-            if (!is_file($tempApp . 'app.json')) {
+            $tempDir = self::unpack($tempPath);
+            $tempFile = self::_scanApps($tempDir);
+            $tempJson = array_filter($tempFile, function ($item) {
+                return substr($item, -8) === 'app.json';
+            });
+            if (empty($tempJson)) {
                 unlink($tempPath);
-                self::_removeFolder($tempApp);
-                throw_error('应用配置有误，压缩包根目录未包含app.json');
+                self::_removeFolder($tempDir);
+                throw_error('配置有误,应用描述文件(app.json)不存在');
             }
+            $tempApp = substr($tempJson[0], 0, -8);
             // 获取应用基础信息
             $appInfo = json_decode(file_get_contents($tempApp . 'app.json'), true);
             if (empty($appInfo['name'] ?? '')) {
@@ -505,32 +511,38 @@ class AppManager extends Service
             $appName = strtolower($appInfo['name']);
             $appPath = base_path() . $appName . DIRECTORY_SEPARATOR;
             if (is_dir($appPath)) {
-                $cover =  json_decode(file_get_contents($appPath . 'app.json'), true);
-                return [
-                    'step' => 2,
-                    'cover' => true,
-                    'message'  => '已存在同名应用，是否覆盖安装？ 如果不是同一个开发者，请对原应用进行备份！如果是同一个开发者，请确保本次覆盖不影响应用服务！',
-                    'appInfo' => [
-                        'name'    => $appInfo['name'],
-                        'path'    => $tempPath,
-                        'title'   => !empty($appInfo['title'] ?? '') ? $appInfo['title'] : '未知',
-                        'author'  => !empty($appInfo['author'] ?? '') ? $appInfo['author'] : '未知',
-                        'version' => !empty($appInfo['version'] ?? '') ? $appInfo['version'] : '未知',
-                    ],
-                    'coverInfo' => [
-                        'name'    => $cover['name'],
-                        'path'    => $appPath,
-                        'title'   => !empty($cover['title'] ?? '') ? $cover['title'] : '未知',
-                        'author'  => !empty($cover['author'] ?? '') ? $cover['author'] : '未知',
-                        'version' => !empty($cover['version'] ?? '') ? $cover['version'] : '未知',
-                    ]
-                ];
+                try {
+                    $cover =  json_decode(file_get_contents($appPath . 'app.json'), true);
+                    return [
+                        'step' => 2,
+                        'cover' => true,
+                        'message'  => '已存在同名应用，是否覆盖安装？ 如果不是同一个开发者，请对原应用进行备份！如果是同一个开发者，请确保本次覆盖不影响应用服务！',
+                        'appInfo' => [
+                            'name'    => $appInfo['name'],
+                            'path'    => $tempPath,
+                            'title'   => !empty($appInfo['title'] ?? '') ? $appInfo['title'] : '未知',
+                            'author'  => !empty($appInfo['author'] ?? '') ? $appInfo['author'] : '未知',
+                            'version' => !empty($appInfo['version'] ?? '') ? $appInfo['version'] : '未知',
+                        ],
+                        'coverInfo' => [
+                            'name'    => $cover['name'],
+                            'path'    => $appPath,
+                            'title'   => !empty($cover['title'] ?? '') ? $cover['title'] : '未知',
+                            'author'  => !empty($cover['author'] ?? '') ? $cover['author'] : '未知',
+                            'version' => !empty($cover['version'] ?? '') ? $cover['version'] : '未知',
+                        ]
+                    ];
+                } catch (\Throwable $th) {
+                    throw_error('存在未知信息同名应用');
+                }
             }
-            // 无冲突情况下直接解压到应用目录
-            $appPath = self::unpack($tempPath, $appPath);
+            // 复制到应用目录
+            if (!$this->_copyDir($tempApp, $appPath)) {
+                throw_error('无法写入app目录');
+            }
             // 删除临时文件
             unlink($tempPath);
-            self::_removeFolder($tempApp);
+            self::_removeFolder($tempDir);
             // 返回应用信息
             return [
                 'step' => 3,
@@ -545,14 +557,19 @@ class AppManager extends Service
             ];
         } else if ($action == 'cover') {
             // 覆盖安装
-            if (!$confirm) {
+            if (!$cover) {
                 unlink($filename);
                 $tempApp = substr($filename, 0, strrpos($filename, '.')) . DIRECTORY_SEPARATOR;
                 self::_removeFolder($tempApp);
                 return true;
             } else {
                 // 解压到临时目录
-                $tempApp = self::unpack($filename);
+                $tempDir = self::unpack($filename);
+                $tempFile = self::_scanApps($tempDir);
+                $tempJson = array_filter($tempFile, function ($item) {
+                    return substr($item, -8) === 'app.json';
+                });
+                $tempApp = substr($tempJson[0], 0, -8);
                 // 获取应用基础信息
                 $appInfo = json_decode(file_get_contents($tempApp . 'app.json'), true);
                 $appName = strtolower($appInfo['name']);
@@ -560,10 +577,12 @@ class AppManager extends Service
                 // 覆盖的应用信息
                 $cover =  json_decode(file_get_contents($appPath . 'app.json'), true);
                 // 解压到应用目录
-                $appPath = self::unpack($filename, $appPath);
+                if (!$this->_copyDir($tempApp, $appPath)) {
+                    throw_error('无法写入app目录');
+                }
                 // 删除临时文件
                 unlink($filename);
-                self::_removeFolder($tempApp);
+                self::_removeFolder($tempDir);
                 // 返回应用信息
                 return [
                     'step' => 3,
@@ -1006,6 +1025,46 @@ class AppManager extends Service
         return $data;
     }
 
+
+    /**
+     * 文件夹文件拷贝
+     *
+     * @param string $src 来源文件夹
+     * @param string $dst 目的地文件夹
+     * @return bool
+     */
+    private function _copyDir($sourceDir = '', $destDir = '')
+    {
+        if(!is_dir($sourceDir)){
+            return false;
+        }
+        if(!is_dir($destDir)){
+            if(!mkdir($destDir)){
+                return false;
+            }
+        }
+        $dir = opendir($sourceDir);
+        if(!$dir){
+            return false;
+        }
+        while(false !== ($file=readdir($dir))){
+            if($file != '.' && $file != '..'){
+                if(is_dir($sourceDir.'/'.$file)){
+                    if(!$this->_copyDir($sourceDir.'/'.$file,$destDir.'/'.$file)) {
+                        return false;
+                     }
+                    }else{
+                        if(!copy($sourceDir.'/'.$file,$destDir.'/'.$file)){
+     
+                        }
+     
+                }
+            }
+        }
+        closedir($dir);
+        return true;
+    }
+
     /**
      * 过滤本地应用
      * @param array $list
@@ -1220,7 +1279,6 @@ class AppManager extends Service
                 return [$this->getFileInfo($path)];
             }
         }
-
         return $data;
     }
 
