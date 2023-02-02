@@ -70,13 +70,13 @@ class AppManager extends Service
     protected function initialize()
     {
         // 服务地址
-        $this->api = $this->app->config->get('cms.api');
+        $this->api = $this->app->config->get('base.api');
         // 框架令牌
         $this->token = $this->getToken();
         // 框架目录
         $this->path = root_path();
         // 框架版本
-        $this->version = $this->app->config->get('cms.version');
+        $this->version = $this->app->config->get('base.version');
         if (empty($this->version)) {
             $this->version = 'last';
         }
@@ -335,9 +335,8 @@ class AppManager extends Service
                     'name' => $user['name'],
                     'avatar' => $user['avatar']
                 ],
-                'config'  => $config = Config::get('cms'),
                 'title'   => 'StartCMS',
-                'frame'   => 'ThinkPHP',
+                'frame'   => $this->app->config->get('base.frame'),
                 'version' => $this->version,
             ];
             return $response['data'];

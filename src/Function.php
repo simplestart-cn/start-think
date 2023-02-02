@@ -10,6 +10,7 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
+use start\AppFacade;
 use start\AppManager;
 use think\exception\HttpResponseException;
 use start\extend\HttpExtend;
@@ -28,6 +29,15 @@ if (!function_exists('debug')) {
     function debug($data, $file = null, $replace = false)
     {
         RuntimeService::instance()->debug($data, $file, $replace);
+    }
+}
+if (!function_exists('app_facade')) {
+    /**
+     * 获取应用门面
+     */
+    function app_facade($name)
+    {
+        return AppFacade::getFacade($name);
     }
 }
 if (!function_exists('app_exist')) {
