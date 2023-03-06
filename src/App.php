@@ -309,9 +309,15 @@ class App
      */
     public function autoLoadEvent(string $appName, string $rootPath)
     {
-        $event = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'event' . DIRECTORY_SEPARATOR;
-        $listener = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'listener' . DIRECTORY_SEPARATOR;
-        $subscribe = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'subscribe' . DIRECTORY_SEPARATOR;
+        if ($appName == 'core') {
+            $event = $rootPath . $appName . DIRECTORY_SEPARATOR . 'event' . DIRECTORY_SEPARATOR;
+            $listener = $rootPath . $appName . DIRECTORY_SEPARATOR . 'listener' . DIRECTORY_SEPARATOR;
+            $subscribe = $rootPath . $appName . DIRECTORY_SEPARATOR . 'subscribe' . DIRECTORY_SEPARATOR;
+        } else {
+            $event = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'event' . DIRECTORY_SEPARATOR;
+            $listener = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'listener' . DIRECTORY_SEPARATOR;
+            $subscribe = $rootPath . 'app' . DIRECTORY_SEPARATOR . $appName . DIRECTORY_SEPARATOR . 'subscribe' . DIRECTORY_SEPARATOR;
+        }
         if (is_dir($event)) {
             // 事件绑定
             $event = array_reduce(glob("{$event}*.php"), function ($result, $item) use ($rootPath) {
