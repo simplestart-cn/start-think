@@ -332,8 +332,11 @@ class App
         }
         if (is_dir($listener)) {
             // 事件监听
-            $listener = array_reduce(glob("{$listener}*.php"), function ($result, $item) use ($rootPath) {
+            $listener = array_reduce(glob("{$listener}*.php"), function ($result, $item) use ($rootPath, $appName) {
                 $eventName = basename($item, '.php');
+                if($appName !== 'core'){
+                    $eventName = $appName.'@'.$eventName;
+                }
                 return array_merge($result, [
                     $eventName => [str_replace('.php', '', str_replace('/', '\\', str_replace($rootPath, '', $item)))]
                 ]);

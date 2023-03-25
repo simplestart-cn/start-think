@@ -12,12 +12,26 @@
 
 use start\AppFacade;
 use start\AppManager;
+use think\facade\Event;
 use think\exception\HttpResponseException;
 use start\extend\HttpExtend;
 use start\extend\CodeExtend;
 use start\extend\DataExtend;
 use start\service\TokenService;
 use start\service\RuntimeService;
+
+/**
+ * 触发事件
+ * 修复TP事件函数缺失第三个参数问题
+ * @param string|object $event  事件名称
+ * @param mixed         $params 传入参数
+ * @param bool          $once   只获取一个有效返回值
+ * @return mixed
+ */
+function event($event, $args = null, bool $once = false)
+{
+    return Event::trigger($event, $args, $once);
+}
 
 if (!function_exists('debug')) {
     /**
