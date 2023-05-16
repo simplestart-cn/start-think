@@ -252,18 +252,18 @@ abstract class Service
      * @param  boolean $force  是否硬删除
      * @return boolean         [description]
      */
-    public static function remove($filter, $force = false)
+    public static function remove($filter)
     {
         if (is_string($filter) && strstr($filter, ',') !== false) {
             $filter = explode(',', $filter);
         }
         $model = self::model();
         if (!is_array($filter)) {
-            return $model->find($filter)->remove($force);
+            return $model->find($filter)->remove();
         } else {
             $list = $model->where($model->getPk(), 'in', $filter)->select();
             foreach ($list as $item) {
-                $item->remove($force);
+                $item->remove();
             }
             return true;
         }

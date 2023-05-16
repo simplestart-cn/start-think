@@ -38,7 +38,7 @@ class Run extends Command
             $root = $this->app->getRootPath();
         }
         if (empty($host)) {
-            $host = 'localhost';
+            $host = '0.0.0.0';
         } elseif (stripos($host, ':') !== false) {
             $host = explode(':', $host);
             $port = array_pop($host);

@@ -184,10 +184,10 @@ class Model extends \think\Model
      * 删除数据
      * @return boolean
      */
-    public function remove($force = false)
+    public function remove()
     {
         $fields = $this->getTableFields();
-        if($force || !in_array($this->deleteTime, $fields)){
+        if(!in_array($this->deleteTime, $fields)){
             return $this->force()->delete();
         }
         return $this->delete();
