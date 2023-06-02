@@ -51,6 +51,7 @@ class AuthService extends Service
             $temp['params']    = $auth['params'] ?? '';
             $temp['node']      = $item['node'];
             $temp['menu']      = $auth['menu'] ?? $item['ismenu'];
+            $temp['navbar']    = $auth['navbar'] ?? $item['isnavbar'];
             $temp['super']     = $auth['super'] ?? $item['issuper'];
             $temp['admin']     = $auth['admin'] ?? $item['isadmin'];
             $temp['route']     = $auth['route'] ?? $item['isroute'];
@@ -72,7 +73,7 @@ class AuthService extends Service
             $authNode[$app]['path']  = '/' . $appInfo['name'];
             $authNode[$app]['icon']  = $appInfo['icon'] ?? '';
             $authNode[$app]['title'] = $appInfo['title'] ?? $appInfo['name'];
-            $authNode[$app]['menu']  = boolval($appInfo['entry'] ?? false);
+            $authNode[$app]['navbar']  = boolval($appInfo['entry'] ?? false);
             if (isset($appInfo['auth'])) {
                 foreach ($appInfo['auth'] as &$extend) {$extend['app'] = $app;}
                 $authExtend = array_combine(array_column($appInfo['auth'], 'node'), array_values($appInfo['auth']));

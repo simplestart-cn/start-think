@@ -64,13 +64,6 @@ class Model extends \think\Model
     protected $deleteTime = 'delete_time';
 
     /**
-     * 默认软删除值
-     *
-     * @var integer
-     */
-    protected $defaultSoftDelete = 0;
-
-    /**
      * 架构函数
      * @access public
      * @param array $data 数据

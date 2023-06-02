@@ -50,7 +50,7 @@ class Run extends Command
             $host,
             $port,
             escapeshellarg($root),
-            escapeshellarg($root . DIRECTORY_SEPARATOR . 'router.php')
+            escapeshellarg($root . 'router.php')
         );
         $output->writeln(sprintf('Simplestart!'));
         $output->writeln(sprintf('Server is run on <http://%s:%s/>', $host, $port));

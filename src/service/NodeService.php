@@ -86,6 +86,7 @@ class NodeService extends Service
                 !empty($method['issuper']) ||
                 !empty($method['isadmin']) ||
                 !empty($method['islogin']) ||
+                !empty($method['isnavbar']) ||
                 !empty($method['ismenu']) ||
                 !empty($method['isview']) ||
                 !empty($method['isroute'])
@@ -99,6 +100,7 @@ class NodeService extends Service
                     'issuper' => $method['issuper'],
                     'isadmin' => $method['isadmin'],
                     'islogin' => $method['islogin'],
+                    'isnavbar' => $method['isnavbar'],
                     'ismenu' => $method['ismenu'],
                     'isview' => $method['isview'],
                     'isroute' => $method['isroute']
@@ -112,6 +114,7 @@ class NodeService extends Service
                     'issuper' => $method['issuper'],
                     'isadmin' => $method['isadmin'],
                     'islogin' => $method['islogin'],
+                    'isnavbar' => $method['isnavbar'],
                     'ismenu' => $method['ismenu'],
                     'isview' => $method['isview'],
                     'isroute' => $method['isroute']
@@ -128,6 +131,7 @@ class NodeService extends Service
                 'issuper' => $method['issuper'],
                 'isadmin' => $method['isadmin'],
                 'islogin' => $method['islogin'],
+                'isnavbar' => $method['isnavbar'],
                 'ismenu'  => $method['ismenu'],
                 'isview'  => $method['isview'],
                 'isroute'  => $method['isroute']
@@ -140,6 +144,7 @@ class NodeService extends Service
                 'issuper' => $method['issuper'],
                 'isadmin' => $method['isadmin'],
                 'islogin' => $method['islogin'],
+                'isnavbar' => (boolean)$method['isnavbar'],
                 'ismenu' => (boolean)$method['ismenu'],
                 'isview' => 0,
                 'isroute' => $method['isroute']
@@ -238,18 +243,19 @@ class NodeService extends Service
 
         $text = strtr($comment, "\n", ' ');
         $title = preg_replace('/^\/\*\s*\*\s*\*\s*(.*?)\s*\*.*?$/', '$1', $text);
-        foreach (['@auth', '@super', '@admin', '@menu', '@view', '@route'] as $find) if (stripos($title, $find) === 0) {
+        foreach (['@auth', '@super', '@admin', '@navbar', '@menu', '@view', '@route'] as $find) if (stripos($title, $find) === 0) {
             $title = $default;
         }
         $method =  [
-            'title'   => $title ? $title : $default,
-            'isauth'  => intval(preg_match('/@auth\s*/i', $text)),   // 仅限授权访问
-            'issuper' => intval(preg_match('/@super\s*/i', $text)),  // 仅限超管访问
-            'isadmin' => intval(preg_match('/@admin\s*/i', $text)),  // 仅限管理访问
-            'islogin' => intval(preg_match('/@login\s*/i', $text)),  // 登录即可访问
-            'ismenu'  => intval(preg_match('/@menu\s*/i', $text)),   // 作为菜单显示
-            'isview'  => intval(preg_match('/@view\s*/i', $text)),   // 渲染视图模板
-            'isroute'  => intval(preg_match('/@route\s*/i', $text)), // 仅作前端路由
+            'title'     => $title ? $title : $default,
+            'isauth'    => intval(preg_match('/@auth\s*/i', $text)),     // 仅限授权访问
+            'issuper'   => intval(preg_match('/@super\s*/i', $text)),    // 仅限超管访问
+            'isadmin'   => intval(preg_match('/@admin\s*/i', $text)),    // 仅限管理访问
+            'islogin'   => intval(preg_match('/@login\s*/i', $text)),    // 登录即可访问
+            'isnavbar'  => intval(preg_match('/@navbar\s*/i', $text)), // 作为导航菜单
+            'ismenu'    => intval(preg_match('/@menu\s*/i', $text)),     // 作为应用菜单
+            'isview'    => intval(preg_match('/@view\s*/i', $text)),     // 渲染视图模板
+            'isroute'   => intval(preg_match('/@route\s*/i', $text)),   // 仅作前端路由
         ];
         // 匹配设置的auth值
         if($method['isauth']){
@@ -267,7 +273,7 @@ class NodeService extends Service
                     if(is_array($method['isauth'])){
                         $method['isauth']['view'] = $view[1];
                     }else{
-                        $method['isauth'] = ['menu' => $method['ismenu'], 'view' => $view[1]];
+                        $method['isauth'] = ['navbar' => $method['isnavbar'], 'view' => $view[1]];
                     }
                 }
             }

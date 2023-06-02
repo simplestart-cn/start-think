@@ -293,77 +293,47 @@ if (!function_exists('decode')) {
         return iconv('GBK//TRANSLIT', 'UTF-8', $chars);
     }
 }
+
 /**
- * 系统加密方法
- * @param string $data 要加密的字符串
- * @param string $key 加密密钥
- * @param int $expire 过期时间 单位 秒
- * @return string
+ * 系统加密算法
+ *
+ * @param string $data 需要加密的数据
+ * @param string $key  用于加密的密钥
+ * @param int    $expire 数据的过期时间，以秒为单位
+ * @return string 加密后的字符串
  */
-function start_encrypt($data, $key = '', $expire = 0)
+function start_encrypt(string $data, string $key = '', int $expire = 0): string
 {
-    $key  = md5(empty($key) ? 'Simplestart' : $key);
-    $data = base64_encode($data);
-    $x    = 0;
-    $len  = strlen($data);
-    $l    = strlen($key);
-    $char = '';
-
-    for ($i = 0; $i < $len; $i++) {
-        if ($x == $l) $x = 0;
-        $char .= substr($key, $x, 1);
-        $x++;
-    }
-
-    $str = sprintf('%010d', $expire ? $expire + time() : 0);
-
-    for ($i = 0; $i < $len; $i++) {
-        $str .= chr(ord(substr($data, $i, 1)) + (ord(substr($char, $i, 1))) % 256);
-    }
-
-    $str = str_replace(array('+', '/', '='), array('-', '_', ''), base64_encode($str));
-    return strtoupper(md5($str)) . $str;
+    $key  = md5($key ?: env('CMS_ENCRYPT_KEY', 'SIMPLESTARTCN'));
+    $cipher = "AES-256-CBC";
+    $ivlen = openssl_cipher_iv_length($cipher);
+    $iv = openssl_random_pseudo_bytes($ivlen);
+    $encrypted = openssl_encrypt($data, $cipher, $key, 0, $iv);
+    $expire_time = $expire > 0 ? time() + $expire : 0;
+    return base64_encode($iv . $encrypted . pack('N', $expire_time));
 }
 
 /**
- * 系统解密方法
- * @param  string $data 要解密的字符串 （必须是start_encrypt方法加密的字符串）
- * @param  string $key 加密密钥
- * @return string
+ * 系统解密算法
+ * @param string $data 需要解密的字符串
+ * @param string $key 用于解密的密钥
+ * @return string 解密后的数据
  */
-function start_decrypt($data, $key = '')
+function start_decrypt(string $data, string $key = ''): string
 {
-    $key  = md5(empty($key) ? 'Simplestart' : $key);
-    $data = substr($data, 32);
-    $data = str_replace(array('-', '_'), array('+', '/'), $data);
-    $mod4 = strlen($data) % 4;
-    if ($mod4) {
-        $data .= substr('====', $mod4);
+    $key  = md5($key ?: env('CMS_ENCRYPT_KEY', 'SIMPLESTARTCN'));
+    $cipher = "AES-256-CBC";
+    $data = base64_decode($data);
+    $ivlen = openssl_cipher_iv_length($cipher);
+    $iv = substr($data, 0, $ivlen);
+    $encrypted = substr($data, $ivlen, -4);
+    $expire_time = unpack('N', substr($data, -4))[1];
+    if ($expire_time > 0 && time() > $expire_time) {
+        return 'Data expired.';
     }
-    $data   = base64_decode($data);
-    $expire = substr($data, 0, 10);
-    $data   = substr($data, 10);
-
-    if ($expire > 0 && $expire < time()) {
-        return '';
+    $decrypted = openssl_decrypt($encrypted, $cipher, $key, 0, $iv);
+    if ($decrypted === false) {
+        return 'Data decrypt fail.';
     }
-    $x    = 0;
-    $len  = strlen($data);
-    $l    = strlen($key);
-    $char = $str = '';
-
-    for ($i = 0; $i < $len; $i++) {
-        if ($x == $l) $x = 0;
-        $char .= substr($key, $x, 1);
-        $x++;
-    }
-
-    for ($i = 0; $i < $len; $i++) {
-        if (ord(substr($data, $i, 1)) < ord(substr($char, $i, 1))) {
-            $str .= chr((ord(substr($data, $i, 1)) + 256) - ord(substr($char, $i, 1)));
-        } else {
-            $str .= chr(ord(substr($data, $i, 1)) - ord(substr($char, $i, 1)));
-        }
-    }
-    return base64_decode($str);
+    return $decrypted;
 }

@@ -21,12 +21,49 @@ class App extends Model
 	protected $name = 'core_app';
 
 	/**
-	 * 设置分类
+	 * 设置入口
 	 * @param [type] $value [description]
 	 */
-	public function setCategoryAttr($value)
+	public function setEntryAttr($value)
+	{
+		try {
+			return json_encode($value);
+		} catch (\Throwable $th) {
+			return $value;
+		}
+	}
+
+	/**
+	 * 获取入口
+	 * @param  [type] $value [description]
+	 * @return [type]        [description]
+	 */
+	public function getEntryAttr($value)
+	{
+		try {
+			return json_decode($value);
+		} catch (\Throwable $th) {
+			return $value;
+		}
+	}
+
+	/**
+	 * 设置脚本
+	 * @param [type] $value [description]
+	 */
+	public function setScriptsAttr($value)
 	{
 		return json_encode($value);
+	}
+
+	/**
+	 * 获取脚本
+	 * @param  [type] $value [description]
+	 * @return [type]        [description]
+	 */
+	public function getScriptsAttr($value)
+	{
+		return json_decode($value);
 	}
 
 	/**
@@ -39,6 +76,15 @@ class App extends Model
 		return json_decode($value);
 	}
 
+	/**
+	 * 设置分类
+	 * @param [type] $value [description]
+	 */
+	public function setCategoryAttr($value)
+	{
+		return json_encode($value);
+	}
+	
 	/**
 	 * 设置文档
 	 * @param [type] $value [description]
@@ -95,8 +141,5 @@ class App extends Model
 	{
 		return json_decode($value);
 	}
-
-
-
 
 }

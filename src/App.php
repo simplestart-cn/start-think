@@ -275,7 +275,6 @@ class App
         if (is_file($appPath . 'middleware.php')) {
             $this->app->middleware->import(include $appPath . 'middleware.php', 'app');
         }
-
         // 加载应用默认语言包
         $this->app->loadLangPack($this->app->lang->defaultLangSet());
     }
