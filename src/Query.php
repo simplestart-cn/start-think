@@ -482,6 +482,9 @@ trait Query
     private function parseFilterItem($query, $table='', $key, $value, $logic = 'AND')
     {
         $opera = '=';
+        if(is_array($value)){
+            $opera = 'in';
+        }
         if(stripos($key, '@') !== false){
             list($key, $opera) = explode('@', $key);
         }

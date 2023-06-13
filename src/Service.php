@@ -94,7 +94,7 @@ abstract class Service
 
     /**
      * 获取模型
-     * @return Model
+     * @return \start\Model
      */
     public static function model()
     {
@@ -249,7 +249,6 @@ abstract class Service
     /**
      * 删除记录
      * @param  array  $filter  删除条件
-     * @param  boolean $force  是否硬删除
      * @return boolean         [description]
      */
     public static function remove($filter)
