@@ -66,7 +66,7 @@ class App
             return $next($request);
         }
 
-        return $this->app->middleware->pipeline('app')
+        return $this->app->middleware->pipeline('core')
             ->send($request)
             ->then(function ($request) use ($next) {
                 return $next($request);
