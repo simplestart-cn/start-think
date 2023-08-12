@@ -109,6 +109,7 @@ abstract class Service
      * 获取模型
      * @param  string      $scope       查询范围
      * @return object      $this->model 模型实例
+     * @return \think\Db
      */
     public static function withoutScope(array $scope = null)
     {
@@ -124,7 +125,7 @@ abstract class Service
      * @param  array  $filter 查询条件
      * @param  array  $order  排序方式
      * @param  array  $with   关联查询
-     * @return Collection
+     * @return \think\Collection
      */
     public static function getList($filter = [], $order = [], $with = null)
     {
@@ -137,7 +138,7 @@ abstract class Service
      * @param  array  $filter 查询条件
      * @param  array  $order  排序方式
      * @param  array  $with   关联查询
-     * @return Collection
+     * @return \think\Collection
      */
     public static function getPage($filter = [], $order = [], $with = null)
     {
@@ -149,7 +150,7 @@ abstract class Service
      * 获取详情
      * @param  array  $filter 查询条件
      * @param  array  $with   关联查询
-     * @return Model
+     * @return \start\Model
      */
     public static function getInfo($filter, $with = null)
     {
@@ -160,7 +161,7 @@ abstract class Service
     /**
      * 创建记录
      * @param  array  $input [description]
-     * @return Model
+     * @return \start\Model
      */
     public static function create($input)
     {
@@ -175,7 +176,7 @@ abstract class Service
     /**
      * 更新记录
      * @param  array  $input [description]
-     * @return Model
+     * @return \start\Model
      */
     public static function update($input)
     {
@@ -196,7 +197,7 @@ abstract class Service
      * 批量更新
      * @param array $list
      * @param array $allowField
-     * @return Collection
+     * @return \think\Collection
      */
     public static function saveAll(array $list, array $allow_field = [])
     {
@@ -249,7 +250,7 @@ abstract class Service
     /**
      * 删除记录
      * @param  array  $filter  删除条件
-     * @return boolean         [description]
+     * @return boolean         成功与否
      */
     public static function remove($filter)
     {

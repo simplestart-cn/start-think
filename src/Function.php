@@ -10,7 +10,6 @@
 // | 仓库地址: https://github.com/simplestart-cn/start-think
 // +----------------------------------------------------------------------
 
-use start\AppFacade;
 use start\AppManager;
 use think\facade\Event;
 use think\exception\HttpResponseException;
@@ -32,7 +31,6 @@ function event($event, $args = null, bool $once = false)
 {
     return Event::trigger($event, $args, $once);
 }
-
 if (!function_exists('debug')) {
     /**
      * 打印输出数据到文件
@@ -43,15 +41,6 @@ if (!function_exists('debug')) {
     function debug($data, $file = null, $replace = false)
     {
         RuntimeService::instance()->debug($data, $file, $replace);
-    }
-}
-if (!function_exists('app_facade')) {
-    /**
-     * 获取应用门面
-     */
-    function app_facade($name)
-    {
-        return AppFacade::getFacade($name);
     }
 }
 if (!function_exists('app_exist')) {
@@ -73,7 +62,6 @@ if (!function_exists('data_path')) {
         return root_path() .'data' . DIRECTORY_SEPARATOR;
     }
 }
-
 if (!function_exists('array_to_xml')) {
     /**
      * 数组转xml
@@ -87,7 +75,6 @@ if (!function_exists('array_to_xml')) {
         return DataExtend::arr2xml($data, $root);
     }
 }
-
 if (!function_exists('xml_to_array')) {
     /**
      * xml转数组
@@ -100,7 +87,6 @@ if (!function_exists('xml_to_array')) {
         return DataExtend::xml2arr($xml);
     }
 }
-
 if (!function_exists('unique_date')) {
     /**
      * 唯一日期编码

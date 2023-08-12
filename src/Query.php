@@ -185,7 +185,6 @@ trait Query
         }
 
         $resultSet = $query->select($data);
-
         foreach ($resultSet as $result) {
             /** @var Model $result */
             $result->force($force)->delete();

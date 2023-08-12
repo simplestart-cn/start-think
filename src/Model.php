@@ -113,7 +113,7 @@ class Model extends \think\Model
      * @param     array                         $filter   [description]
      * @param     array                         $order    [description]
      * @param     array                         $with     [description]
-     * @return    collection                              [description]
+     * @return    \think\Collection                       [description]
      */
     function list($filter = [], $order = [], $with = null)
     {
@@ -133,7 +133,7 @@ class Model extends \think\Model
      * @param     array                         $order    [description]
      * @param     array                         $with     [description]
      * @param     array                         $paging   [description]
-     * @return    collection                              [description]
+     * @return    \think\Collection                       [description]
      */
     public function page($filter = [], $order = [], $with = null, $paging = [])
     {
@@ -160,7 +160,7 @@ class Model extends \think\Model
      * 获取详情
      * @param     array                         $filter   [description]
      * @param     array                         $with     [description]
-     * @return    object                                  [description]
+     * @return    \start\Model                            [description]
      */
     public function info($filter, $with = null)
     {
@@ -189,12 +189,11 @@ class Model extends \think\Model
     /**
      * 更新数据
      * 注：修复TP6.0.2开启全局查询时没有添加自动加上主键查询条件的问题
-     * @access public
      * @param array  $data       数据数组
      * @param mixed  $where      更新条件
      * @param array  $allowField 允许字段
      * @param string $suffix     数据表后缀
-     * @return static
+     * @return \think\Model
      */
     public static function update(array $data, $where = [], array $allowField = [], string $suffix = '')
     {
@@ -227,10 +226,9 @@ class Model extends \think\Model
 
     /**
      * 关闭全局查询
-     * 修复tp6的大问题
      *
      * @param array $scope
-     * @return this
+     * @return \start\Model
      */
     public function withoutScope(array $scope = null)
     {
