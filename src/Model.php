@@ -12,7 +12,7 @@
 
 namespace start;
 
-use start\Query;
+use Closure;
 use think\Container;
 
 /**
@@ -23,9 +23,9 @@ use think\Container;
 class Model extends \think\Model
 {
     /**
-     * 自定义查询
+     * 使用软删除
      */
-    use Query;
+    use model\concern\SoftDelete;
 
     /**
      * 模型名称
@@ -56,6 +56,13 @@ class Model extends \think\Model
      * @var boolean
      */
     public $useScope = true;
+
+    /**
+     * 启用软删除
+     *
+     * @var boolean
+     */
+    protected $softDelete = false;
 
     /**
      * 软删除字段
@@ -174,16 +181,68 @@ class Model extends \think\Model
     }
 
     /**
-     * 删除数据
-     * @return boolean
+     * 获取当前模型的数据库查询对象
+     * @access public
+     * @param array $scope 设置不使用的全局查询范围
+     * @return Query
      */
-    public function remove()
+    public function db($scope = []): Query
     {
-        $fields = $this->getTableFields();
-        if(!in_array($this->deleteTime, $fields)){
-            return $this->force()->delete();
+        
+        /** @var Query $query */
+        $query = self::$db->connect($this->connection)
+            ->name($this->name . $this->suffix)
+            ->pk($this->pk);
+
+        if (!empty($this->table)) {
+            $query->table($this->table . $this->suffix);
         }
-        return $this->delete();
+
+        $query->model($this)
+            ->json($this->json, $this->jsonAssoc)
+            ->setFieldType(array_merge($this->schema, $this->jsonType));
+
+        // 根据数据表字段自动软删除
+        $fields = $query->getTableFields();
+        $deleteFiled = $this->getDeleteTimeField();
+        if (in_array($deleteFiled, $fields)){
+            $this->softDelete = true;
+        }
+        if( $this->softDelete && (!property_exists($this, 'withTrashed') || !$this->withTrashed)) {
+            $this->withNoTrashed($query);
+        }
+        // 全局作用域(修复关联查询作用域问题,修复存在主键条件时依然使用全局查询的问题)
+        if ($this->useScope && is_array($this->globalScope) && is_array($scope)) {
+            $globalScope = array_diff($this->globalScope, $scope);
+            $where = $this->getWhere();
+            $wherePk = false;
+            if (!empty($where) && is_array($where)) {
+                foreach ($where as $item) {
+                    if (is_string($this->pk)) {
+                        if (in_array($this->pk, $item)) {
+                            $wherePk = true;
+                        }
+                    } else if (is_array($this->pk) && count($item) > 0) {
+                        if (in_array($item[0], $this->pk)) {
+                            $wherePk = true;
+                        }
+                    }
+                }
+            }
+            if (!$wherePk) {
+                $query->scope($globalScope);
+            }
+        }
+        // 中间件全局查询
+        $scopeQuery = request()->scopeQuery ?? [];
+        if($this->useScope && !empty($scopeQuery)){
+            foreach ($scopeQuery as $scope) {
+                if($scope instanceof Closure ){
+                    call_user_func($scope, $query);
+                }
+            }
+        }
+        return $query;
     }
 
     /**
@@ -222,6 +281,136 @@ class Model extends \think\Model
         $result->exists(true)->save($data);
 
         return $result;
+    }
+
+    /**
+     * 删除当前的记录
+     * @access public
+     * @return bool
+     */
+    public function delete(): bool
+    {
+        if (!$this->isExists() || $this->isEmpty() || false === $this->trigger('BeforeDelete')) {
+            return false;
+        }
+
+        $force = $this->isForce();
+        if ($this->softDelete && !$force) {
+            // 软删除
+            $name  = $this->getDeleteTimeField();
+            $this->set($name, $this->autoWriteTimestamp());
+
+            $this->exists()->withEvent(false)->save();
+
+            $this->withEvent(true);
+        } else {
+            // 读取更新条件
+            $where = $this->getWhere();
+
+            // 删除当前模型数据
+            $this->db()
+                ->where($where)
+                ->removeOption('soft_delete')
+                ->delete();
+
+            $this->lazySave(false);
+        }
+
+        // 关联删除
+        if (!empty($this->relationWrite)) {
+            $this->autoRelationDelete($force);
+        }
+
+        $this->trigger('AfterDelete');
+
+        $this->exists(false);
+
+        return true;
+    }
+
+    /**
+     * 删除记录
+     * @access public
+     * @param mixed $data 主键列表 支持闭包查询条件
+     * @param bool $force 是否强制删除
+     * @return bool
+     */
+    public static function destroy($data, bool $force = false): bool
+    {
+        // 传入空值（包括空字符串和空数组）的时候不会做任何的数据删除操作，但传入0则是有效的
+        if (empty($data) && 0 !== $data) {
+            return false;
+        }
+        $model = (new static());
+
+        $query = $model->db(false);
+
+        // 仅当强制删除时包含软删除数据
+        if ($force) {
+            $query->removeOption('soft_delete');
+        }
+
+        if (is_array($data) && key($data) !== 0) {
+            $query->where($data);
+            $data = null;
+        } elseif ($data instanceof \Closure) {
+            call_user_func_array($data, [&$query]);
+            $data = null;
+        } elseif (is_null($data)) {
+            return false;
+        }
+
+        $resultSet = $query->select($data);
+
+        foreach ($resultSet as $result) {
+            /** @var Model $result */
+            $result->force($force)->delete();
+        }
+
+        return true;
+    }
+
+    /**
+     * 自动删除数据
+     * @return boolean
+     */
+    public function remove()
+    {
+        if(!$this->softDelete){
+            return $this->force()->delete();
+        }
+        return $this->delete();
+    }
+
+    /**
+     * 恢复被软删除记录
+     * @access public
+     * @param array $where 更新条件
+     * @return bool
+     */
+    public function restore($where = []): bool
+    {
+        if (!$this->softDelete || false === $this->trigger('BeforeRestore')) {
+            return false;
+        }
+
+        if (empty($where)) {
+            $pk = $this->getPk();
+            if (is_string($pk)) {
+                $where[] = [$pk, '=', $this->getData($pk)];
+            }
+        }
+
+        // 恢复删除
+        $name = $this->getDeleteTimeField();
+        $this->db(false)
+            ->where($where)
+            ->useSoftDelete($name, $this->getWithTrashedExp())
+            ->update([$name => $this->defaultSoftDelete]);
+
+        $this->trigger('AfterRestore');
+
+        return true;
     }
 
     /**

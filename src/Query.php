@@ -12,281 +12,25 @@
 
 namespace start;
 
-use think\facade\Cache;
-use think\db\BaseQuery;
-
+use Closure;
 /**
  * 自定义查询基类
  * Class Query
  * @package start
  */
-trait Query
+class Query extends \think\db\Query
 {
 
-    public function db($scope = []): BaseQuery
-    {
-        $query = parent::db($scope);
-        // 软删除
-        $fields = $query->getTableFields();
-        if (in_array($this->deleteTime, $fields) && !$this->withTrashed) {
-            $this->withNoTrashed($query);
-        }
-        // 全局作用域(修复关联查询作用域问题,修复存在主键条件时依然使用全局查询的问题)
-        if ($this->useScope && is_array($this->globalScope) && is_array($scope)) {
-            $globalScope = array_diff($this->globalScope, $scope);
-            $where = $this->getWhere();
-            $wherePk = false;
-            if (!empty($where) && is_array($where)) {
-                foreach ($where as $item) {
-                    if (is_string($this->pk)) {
-                        if (in_array($this->pk, $item)) {
-                            $wherePk = true;
-                        }
-                    } else if (is_array($this->pk) && count($item) > 0) {
-                        if (in_array($item[0], $this->pk)) {
-                            $wherePk = true;
-                        }
-                    }
-                }
-            }
-            if (!$wherePk) {
-                $query->scope($globalScope);
-            }
-        }
-        return $query;
-    }
-
     /**
-     * 判断当前实例是否被软删除
+     * 快速查询，支持操作符查询及关联表查询
      * @access public
-     * @return bool
-     */
-    public function trashed(): bool
-    {
-        $field = $this->getDeleteTimeField();
-
-        if ($field && !empty($this->getOrigin($field))) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * 全局查询软删除数据
-     * @param BaseQuery $query
-     * @return void
-     */
-    public function scopeWithTrashed(BaseQuery $query)
-    {
-        $query->removeOption('soft_delete');
-    }
-
-    /**
-     * 仅查询软删除数据
-     * @param BaseQuery $query
-     * @return void
-     */
-    public function scopeOnlyTrashed(BaseQuery $query)
-    {
-        $field = $this->getDeleteTimeField(true);
-
-        if ($field) {
-            $query->useSoftDelete($field, $this->getWithTrashedExp());
-        }
-    }
-
-    /**
-     * 获取软删除数据的查询条件
-     * @access protected
-     * @return array
-     */
-    protected function getWithTrashedExp(): array
-    {
-        return is_null($this->defaultSoftDelete) ? ['notnull', ''] : ['<>', $this->defaultSoftDelete];
-    }
-
-    /**
-     * 删除当前的记录
-     * @access public
-     * @return bool
-     */
-    public function delete(): bool
-    {
-        if (!$this->isExists() || $this->isEmpty() || false === $this->trigger('BeforeDelete')) {
-            return false;
-        }
-
-        $name  = $this->getDeleteTimeField();
-        $force = $this->isForce();
-
-        if ($name && !$force) {
-            // 软删除
-            $this->set($name, $this->autoWriteTimestamp());
-
-            $this->exists()->withEvent(false)->save();
-
-            $this->withEvent(true);
-        } else {
-            // 读取更新条件
-            $where = $this->getWhere();
-
-            // 删除当前模型数据
-            $this->db()
-                ->where($where)
-                ->removeOption('soft_delete')
-                ->delete();
-
-            $this->lazySave(false);
-        }
-
-        // 关联删除
-        if (!empty($this->relationWrite)) {
-            $this->autoRelationDelete($force);
-        }
-
-        $this->trigger('AfterDelete');
-
-        $this->exists(false);
-
-        return true;
-    }
-
-    /**
-     * 删除记录
-     * @access public
-     * @param mixed $data 主键列表 支持闭包查询条件
-     * @param bool $force 是否强制删除
-     * @return bool
-     */
-    public static function destroy($data, bool $force = false): bool
-    {
-        // 传入空值（包括空字符串和空数组）的时候不会做任何的数据删除操作，但传入0则是有效的
-        if (empty($data) && 0 !== $data) {
-            return false;
-        }
-        $model = (new static());
-
-        $query = $model->db(false);
-
-        // 仅当强制删除时包含软删除数据
-        if ($force) {
-            $query->removeOption('soft_delete');
-        }
-
-        if (is_array($data) && key($data) !== 0) {
-            $query->where($data);
-            $data = null;
-        } elseif ($data instanceof \Closure) {
-            call_user_func_array($data, [&$query]);
-            $data = null;
-        } elseif (is_null($data)) {
-            return false;
-        }
-
-        $resultSet = $query->select($data);
-        foreach ($resultSet as $result) {
-            /** @var Model $result */
-            $result->force($force)->delete();
-        }
-
-        return true;
-    }
-
-    /**
-     * 恢复被软删除的记录
-     * @access public
-     * @param array $where 更新条件
-     * @return bool
-     */
-    public function restore($where = []): bool
-    {
-        $name = $this->getDeleteTimeField();
-
-        if (!$name || false === $this->trigger('BeforeRestore')) {
-            return false;
-        }
-
-        if (empty($where)) {
-            $pk = $this->getPk();
-            if (is_string($pk)) {
-                $where[] = [$pk, '=', $this->getData($pk)];
-            }
-        }
-
-        // 恢复删除
-        $this->db(false)
-            ->where($where)
-            ->useSoftDelete($name, $this->getWithTrashedExp())
-            ->update([$name => $this->defaultSoftDelete]);
-
-        $this->trigger('AfterRestore');
-
-        return true;
-    }
-
-    /**
-     * 获取软删除字段
-     * @access protected
-     * @param bool $read 是否查询操作 写操作的时候会自动去掉表别名
-     * @return string|false
-     */
-    protected function getDeleteTimeField(bool $read = false)
-    {
-        $field = property_exists($this, 'deleteTime') && isset($this->deleteTime) ? $this->deleteTime : 'delete_time';
-
-        if (false === $field) {
-            return false;
-        }
-
-        if (false === strpos($field, '.')) {
-            $field = '__TABLE__.' . $field;
-        }
-
-        if (!$read && strpos($field, '.')) {
-            $array = explode('.', $field);
-            $field = array_pop($array);
-        }
-
-        return $field;
-    }
-
-    /**
-     * 查询的时候默认排除软删除数据
-     * @access protected
-     * @param  BaseQuery $query
-     * @return void
-     */
-    protected function withNoTrashed(BaseQuery $query): void
-    {
-        $field = $this->getDeleteTimeField(true);
-
-        if ($field) {
-            $condition = is_null($this->defaultSoftDelete) ? ['null', ''] : ['=', $this->defaultSoftDelete];
-            $query->useSoftDelete($field, $condition);
-        }
-    }
-
-    /**
-     * 全局查询
-     * 实现db对象链式调用
-     * @param [type] $query
-     * @param array $input
-     * @return void
-     */
-    public function scopeFilter($query, $input = [])
-    {
-        return $this->filter($input, $query);
-    }
-
-    /**
-     * 条件查询，支持操作符查询及关联表查询
-     * @param  array  $input [description]
-     * @return [type]         [description]
+     * @param  mixed  $condition 查询条件
+     * @param  string $index     索引（唯一）
+     * @return $this
      *
-     * input 结构支持
-     * $input = 1;
-     * $input = [
+     * condition 结构支持
+     * $condition = 1;
+     * $condition = [
      *     'key1' => 1,
      *     'key2' => [1,2,3],
      *     'key3' => ['!=', 1],
@@ -300,36 +44,34 @@ trait Query
      *     'with1.key1|key2' => 
      * ];
      */
-    public function filter($input = [], $query = null)
+    public function filter($condition, $index = null)
     {
-        $query = $query ?? $this;  // 查询对象(Query)
-        $filter = [];
+        if (empty($condition)) {
+            return $this;
+        }
+        if ($condition instanceof Closure){
+            if ($index) {
+                $this->options['filter'][$index] = $condition;
+            } else {
+                $this->options['filter'][] = $condition;
+            }
+            return $this;
+        }
+        $query = $this;     // 查询对象
+        $filter = [];       // 查询条件
         $hasModel = [];     // 已关联模型
         $hasWhere = false;  // 是否关联查询
         $hasWhereOr = [];   // 关联OR查询
         $hasWhereAnd = [];  // 关联AND查询
-        $options = $query->getOptions();
+
         
-        if (!$this->useScope) {
-            $static = new static();
-            $static->useScope = false;
-            $query =  $static->db(null);
-        }
-        if (empty($input)) {
-            return $query;
-        }
-        if (!is_array($input)) {
-            return $query->where($input);
-        } else if (count($input) > 0) {
+        if (!is_array($condition)) {
+            return $query->where($condition);
+        } else if (count($condition) > 0) {
             // 数据字典
-            $table = $this->getTable();
-            $tableFields = Cache::get($table . '_fields');
-            if (empty($tableFields) || env('APP_DEBUG')) {
-                $tableFields = $this->getTableFields();
-                Cache::set($table . '_fields', $tableFields);
-            }
+            $tableFields = $this->getTableFields();
             // 分割查询
-            foreach ($input as $key => $value) {
+            foreach ($condition as $key => $value) {
                 // 过滤空字段
                 if($value === '' || $value === null){
                     continue;

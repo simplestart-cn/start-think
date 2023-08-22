@@ -1,5 +1,5 @@
 # Library for StartCMS
-start-think 是一个基于ThinkORM封装的多应用管理类库  
+start-think 是一个基于ThinkORM拓展的多应用管理类库  
 始终秉承 开源 开放 自由的理念  
 让我们简单地开始!  
 Simplestart!  
@@ -23,3 +23,4 @@ Github仓库地址：https://github.com/simplestart-cn/start-think
 ## 使用说明
 * start-think 需要 Composer 支持
 * 安装命令 ` composer require simplestart/start-think`
+* config/database.php添加自定义查询类 `'query'  => '\start\Query'`
