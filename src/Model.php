@@ -22,9 +22,7 @@ use think\Container;
  */
 class Model extends \think\Model
 {
-    /**
-     * 使用软删除
-     */
+
     use model\concern\SoftDelete;
 
     /**
@@ -56,6 +54,12 @@ class Model extends \think\Model
      * @var boolean
      */
     public $useScope = true;
+
+    /**
+     * 全局查询范围
+     * @var array
+     */
+    protected $globalScope = [];
 
     /**
      * 启用软删除
@@ -211,37 +215,29 @@ class Model extends \think\Model
         if( $this->softDelete && (!property_exists($this, 'withTrashed') || !$this->withTrashed)) {
             $this->withNoTrashed($query);
         }
-        // 全局作用域(修复关联查询作用域问题,修复存在主键条件时依然使用全局查询的问题)
-        if ($this->useScope && is_array($this->globalScope) && is_array($scope)) {
-            $globalScope = array_diff($this->globalScope, $scope);
-            $where = $this->getWhere();
-            $wherePk = false;
-            if (!empty($where) && is_array($where)) {
-                foreach ($where as $item) {
-                    if (is_string($this->pk)) {
-                        if (in_array($this->pk, $item)) {
-                            $wherePk = true;
-                        }
-                    } else if (is_array($this->pk) && count($item) > 0) {
-                        if (in_array($item[0], $this->pk)) {
-                            $wherePk = true;
-                        }
+        
+        // 全局作用域
+        $request = request();
+        if ($this->useScope) {
+            // 模型全局查询
+            if(is_array($scope)){
+                $globalScope = array_diff($this->globalScope, $scope);
+                $query->scope($globalScope);
+            }
+            // 请求全局查询
+            $globalQuery = $request->globalQuery ?? [];
+            if(!empty($globalQuery) && $request->useScope){
+                foreach ($globalQuery as $name => $callback) {
+                    if(is_array($scope) && in_array($name, $scope)){
+                        continue;
+                    }
+                    if($callback instanceof Closure ){
+                        call_user_func($callback, $query);
                     }
                 }
             }
-            if (!$wherePk) {
-                $query->scope($globalScope);
-            }
         }
-        // 中间件全局查询
-        $scopeQuery = request()->scopeQuery ?? [];
-        if($this->useScope && !empty($scopeQuery)){
-            foreach ($scopeQuery as $scope) {
-                if($scope instanceof Closure ){
-                    call_user_func($scope, $query);
-                }
-            }
-        }
+        
         return $query;
     }
 

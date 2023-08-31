@@ -31,6 +31,7 @@ function event($event, $args = null, bool $once = false)
 {
     return Event::trigger($event, $args, $once);
 }
+
 if (!function_exists('debug')) {
     /**
      * 打印输出数据到文件
