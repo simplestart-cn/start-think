@@ -90,7 +90,7 @@ class Query extends \think\db\Query
                             !isset($orCondition[$model]) ? $orCondition[$model] = [] : '';
                             $orCondition[$model][$field] = $value;
                             if (!in_array($model, $hasModel)) {
-                                $query = $query->hasWhere($model, []);
+                                $query = $query->model->hasWhere($model, []);
                                 array_push($hasModel, $model);
                             }
                         } else {
@@ -113,12 +113,12 @@ class Query extends \think\db\Query
             if (!empty($hasWhereAnd)) {
                 $hasWhere = true;
                 foreach ($hasWhereAnd as $model => $condition) {
-                    $relateTable = $this->$model()->getName();
+                    $relateTable = $this->model->$model()->getName();
                     if (in_array($model, $hasModel)) {
                         $query = $this->parseFilter($query, $condition, $relateTable);
                     } else {
                         array_push($hasModel, $model);
-                        $query = $query->hasWhere($model, $this->parseFilter($query, $condition, $relateTable));
+                        $query = $query->model->hasWhere($model, $this->parseFilter($query, $condition, $relateTable));
                     }
                 }
             }
@@ -134,7 +134,7 @@ class Query extends \think\db\Query
                                 if ($model === 'this') {
                                     $query = $that->parseFilter($query, $condition, $that->getName(), "OR");
                                 } else {
-                                    $relateTable = $that->$model()->getName();
+                                    $relateTable = $that->model->$model()->getName();
                                     $query = $that->parseFilter($query, $condition, $relateTable, 'OR');
                                 }
                             });
